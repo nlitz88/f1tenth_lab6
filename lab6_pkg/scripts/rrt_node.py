@@ -26,7 +26,6 @@ class Node(object):
         self.x = None
         self.y = None
         self.parent = None
-        self.cost = None # only used in RRT*
         self.is_root = False
 
 # class def for RRT
@@ -63,7 +62,12 @@ class RRT(Node):
 
     def scan_callback(self, scan_msg):
         """
-        LaserScan callback, you should update your occupancy grid here
+        LaserScan callback, you should update your occupancy grid here. Without
+        making things too complicated, would it be better to offload this task
+        to another node? OR, is this kind of occupancy grid specifically only
+        really needed by RRT? Could keep it in here until it needs to be taken
+        out--just pull out its functions into separate modules (I.e., one just
+        for helpers and main functions for occupancy grid generation).
 
         Args: 
             scan_msg (LaserScan): incoming message from subscribed topic
@@ -75,6 +79,8 @@ class RRT(Node):
         """
         The pose callback when subscribed to particle filter's inferred pose
         Here is where the main RRT loop happens
+         
+        Do we need a lock to synchronize access to the occupancy grid?
 
         Args: 
             pose_msg (PoseStamped): incoming message from subscribed topic
@@ -86,7 +92,12 @@ class RRT(Node):
 
     def sample(self):
         """
-        This method should randomly sample the free space, and returns a viable point
+        This method should randomly sample the free space, and returns a viable
+        point
+        
+        Maybe we can basically just say "get me a point that itself doesn't land
+        on an occupied cell. I bet there's a more intelligent way of obtaining
+        this 2D position, rather than just trial and error. 
 
         Args:
         Returns:
