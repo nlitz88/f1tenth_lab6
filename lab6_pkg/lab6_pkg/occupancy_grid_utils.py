@@ -25,14 +25,14 @@ from sensor_msgs.msg import LaserScan
 
 
 @dataclass
-class ContinousPosition:
+class ContinuousPosition:
     """Small helper dataclass to maintain a continous 2D position."""
-    x: float
-    y: float
+    x: float = 0.0
+    y: float = 0.0
 
 # 1. Compute the (continous) X,Y point in the laser frame for each range, theta
 #    in the provided scan.
-def position_from_range(range_m: float, angle_rad: float) -> ContinousPosition:
+def position_from_range(range_m: float, angle_rad: float) -> ContinuousPosition:
     """Computes a (continuous) 2D position in the laser frame from a range and
     the angle it was measured at. 
 
@@ -41,16 +41,39 @@ def position_from_range(range_m: float, angle_rad: float) -> ContinousPosition:
         angle_rad (float): The angle the range was measured at in radians.
 
     Returns:
-        ContinousPosition: The 2D coordinates of where the point lands in the
+        ContinuousPosition: The 2D coordinates of where the point lands in the
         laser frame's x-y plane.
     """
-    # Create new position, initialized at 0, 0.
-    position = ContinousPosition(0.0, 0.0)
+    # Create new empty position.
+    position = ContinuousPosition
     # Compute x as the range_m*cosine(angle_rad).
     position.x = range_m*np.cos(angle_rad)
     # Compute y as the range_m*sin(angle_rad).
     position.y = range_m*np.sin(angle_rad)
     return position
+
+@dataclass
+class GridPosition:
+    x: int = 0
+    y: int = 0
+
+def project_continous_point_to_grid(grid_resolution_m_c: float, 
+                                    continous_point: ContinuousPosition) -> GridPosition:
+    """Takes a continous 2D position in a frame and converts it to coordinates
+    in a 2D grid, where there is no transformation (translation or rotation)
+    from the source frame to the grid's frame.
+
+    Args:
+        grid_resolution_m_c (float): The number of cells per meter in the grid
+        you're projecting the continous point into.
+        continous_point (ContinuousPosition): Continous position (in meters) of a
+        point in an arbitrary frame.
+
+    Returns:
+        GridPosition: The position of the continuous point projected into the
+        grid. The coordinates with respect to a grid whose 
+    """
+    pass
 
 # Okay, so, I have the sequence of steps that'll be needed to build up an
 # occupancy grid from laser scans. However, now, I want to think not just about
@@ -71,7 +94,14 @@ def laser_update_occupancy_grid(scan_message: LaserScan,
     # notes.
 
     # 1. Compute the (continous) X,Y point in the laser frame for each range, theta
-    #    in the provided scan.
+    #    in the provided scan. TODO: Could wrap this up into a function for
+    #    testability. TODO: Consider refactoring with numpy? I.e., doing all
+    #    those on the array at once.
+    positions = []
+    for i, range in enumerate(scan_message.ranges):
+        # TODO: Need to call in LiDAR utils function that gives us the
+        continous_position = position_from_range(range_m=range, angle_rad=i*scan_message.angle_increment)
+        positions.append(continous_position)
 
     # 2. Given the resolution of the occupancy grid that you're mapping into, assume
     #    the origin of the occupancy grid coincides with the origin of the laser
@@ -86,3 +116,38 @@ def laser_update_occupancy_grid(scan_message: LaserScan,
     #    (I.e., rows and columns of the 2D array).
     
     pass
+
+# This is going to be a QUICK implementation of the more robust implementation
+# above. If this works, I can re-implement this in a cleaner way (I.e., breaking
+# things up like above).
+def laser_update_occupancy_grid_temp(scan_message: LaserScan,
+                                current_occupancy_grid: OccupancyGrid) -> OccupancyGrid:
+    
+    # Iterate through the scan messages, compute the continuous position of each
+    # of them.
+    ranges_m = np.array(scan_message.ranges)
+    angles_rad = np.array([i*scan_message.angle_increment for i in range(len(ranges_m))])
+    points_x_m = np.cos(angles_rad)*ranges_m
+    points_y_m = np.sin(angles_rad)*ranges_m
+    
+    # Compute where these continuous points are in the grid.
+    # Get resolution of grid in meters per cell. Flip to get cells per meter.
+    grid_resolution_c_m = 1.0/current_occupancy_grid.info.resolution
+    x_cell_coords = grid_resolution_c_m*points_x_m
+    y_cell_coords = grid_resolution_c_m*points_y_m
+    # Now, have to transform those coordinates to the grid's frame. This
+    # involves adding the translation from grid origin to laser origin to each
+    # coordinate. Before that, though, have to invert both x and y coord, as the
+    # grid frame exact opposite basis vector directions for x and y axis.
+    height = current_occupancy_grid.info.height
+    width = current_occupancy_grid.info.width
+    x_cell_coords = -x_cell_coords + np.floor(height/2)
+    y_cell_coords = -y_cell_coords + np.floor(height/2)
+    # Finally, update the cells at the coordinates in the grid that these LiDAR
+    # points fall into.
+    # NOTE: Row major indexing. Need to multiply by "width" by number in x, and
+    # then add number in y.
+    for i in range(x_cell_coords):
+        current_occupancy_grid.data[x_cell_coords[i]*width+y_cell_coords[i]] = 1
+    # Return updated current occupancy grid.
+    return current_occupancy_grid
