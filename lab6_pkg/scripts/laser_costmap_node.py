@@ -57,19 +57,22 @@ class LaserCostmap(Node):
             # utils function to see what happens. need to set origin of that grid.
             new_grid = OccupancyGrid()
             # TODO THESE ARE ALL VALUES THAT SHOULD BE PARAMETERIZED FOR THIS NODE.
-            new_grid.info.height = 500
-            new_grid.info.width = 500
+            new_grid.info.height = 10
+            new_grid.info.width = 10
             new_grid.info.resolution = 0.05
             with self.__pose_lock:
                 new_grid.info.origin = self.__pose
             # Fill out the new grid's header. Set its parent frame equal to the
             # laser's frame (the frame that the laser scans are w.r.t.).
             new_grid.header.stamp = self.get_clock().now().to_msg()
-            new_grid.header.frame_id = laserscan_msg.header.frame_id
+            # new_grid.header.frame_id = laserscan_msg.header.frame_id #
+            # WAIT--do laser scan values NOT have a frame??? No, nevermind,
+            # that's not the issue.
+            new_grid.header.frame_id = "ego_racecar/base_link"
             # Call helper function to actually project laserscan ranges on the
             # occupancy grid.
             updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
-                                                            current_occupancy_grid=new_grid)
+                                                            current_occupancy_grid=new_grid, logger=self.get_logger())
             # Publish the updated grid.
             self.__laser_local_costmap_publisher.publish(updated_grid)
             self.get_logger().info(f"Published new local occupancy grid!")

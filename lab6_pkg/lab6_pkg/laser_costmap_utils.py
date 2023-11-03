@@ -121,7 +121,7 @@ def laser_update_occupancy_grid(scan_message: LaserScan,
 # above. If this works, I can re-implement this in a cleaner way (I.e., breaking
 # things up like above).
 def laser_update_occupancy_grid_temp(scan_message: LaserScan,
-                                     current_occupancy_grid: OccupancyGrid) -> OccupancyGrid:
+                                     current_occupancy_grid: OccupancyGrid, logger) -> OccupancyGrid:
     
     # Iterate through the scan messages, compute the continuous position of each
     # of them.
@@ -141,13 +141,29 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # grid frame exact opposite basis vector directions for x and y axis.
     height = current_occupancy_grid.info.height
     width = current_occupancy_grid.info.width
-    x_cell_coords = -x_cell_coords + np.floor(height/2)
-    y_cell_coords = -y_cell_coords + np.floor(height/2)
+    x_cell_coords: np.ndarray = -x_cell_coords + np.floor(height/2)
+    y_cell_coords: np.ndarray = -y_cell_coords + np.floor(width/2)
+    # Convert these to integer coordinate indices.
+    x_cell_coords = x_cell_coords.astype(dtype=np.int32)
+    y_cell_coords = y_cell_coords.astype(dtype=np.int32)
+    # Clamp the coordinates to the max dimensions of the grid.
+    x_cell_coords = np.clip(x_cell_coords, a_min=0, a_max=height-1)
+    y_cell_coords = np.clip(y_cell_coords, a_min=0, a_max=width-1)
     # Finally, update the cells at the coordinates in the grid that these LiDAR
     # points fall into.
+    # BUT FIRST, have to initialize the data array.
+    numpy_occupancy_grid = np.zeros(shape=(height, width), dtype=np.int8)
     # NOTE: Row major indexing. Need to multiply by "width" by number in x, and
     # then add number in y.
-    for i in range(x_cell_coords):
-        current_occupancy_grid.data[x_cell_coords[i]*width+y_cell_coords[i]] = 1
+    for i in range(len(x_cell_coords)):
+        # current_occupancy_grid.data[x_cell_coords[i]*width+y_cell_coords[i]] =
+        # 1
+        numpy_occupancy_grid[x_cell_coords[i], y_cell_coords[i]] = 1
+    # Reshape 2D numpy array into row-major order to store in occupancygrid
+    # array.
+    # current_occupancy_grid.data = list(numpy_occupancy_grid.flatten())
+    current_occupancy_grid.data = [100]
+    
+
     # Return updated current occupancy grid.
     return current_occupancy_grid
