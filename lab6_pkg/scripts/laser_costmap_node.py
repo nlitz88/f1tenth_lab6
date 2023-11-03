@@ -33,10 +33,10 @@ class LaserCostmap(Node):
         self.__posestamped: PoseStamped = None
         self.__posestamped_lock = Lock()
 
-        # Create publisher for publishing locally planned path.
-        self.__path_publisher = self.create_publisher(msg_type=Path,
-                                                      topic="path",
-                                                      qos_profile=10)
+        # Create publisher to publish the latest generated local costmap.
+        self.__laser_local_costmap_publisher = self.create_publisher(msg_type=OccupancyGrid,
+                                                                     topic="laser_local_costmap",
+                                                                     qos_profile=10)
     
     def __pose_callback(self, posestamped_msg: PoseStamped) -> None:
         """Callback function that synchronously updates the local copy of our
@@ -62,9 +62,12 @@ class LaserCostmap(Node):
         # laser's frame (the frame that the laser scans are w.r.t.).
         new_grid.header.stamp = self.get_clock().now().to_msg()
         new_grid.header.frame_id = laserscan_msg.header.frame_id
-
-        
-
+        # Call helper function to actually project laserscan ranges on the
+        # occupancy grid.
+        updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
+                                                        current_occupancy_grid=new_grid)
+        # Publish the updated grid.
+        self.__laser_local_costmap_publisher.publish(updated_grid)
         self.get_logger().info(f"Published new local occupancy grid!")
 
 def main(args=None):

@@ -121,7 +121,7 @@ def laser_update_occupancy_grid(scan_message: LaserScan,
 # above. If this works, I can re-implement this in a cleaner way (I.e., breaking
 # things up like above).
 def laser_update_occupancy_grid_temp(scan_message: LaserScan,
-                                current_occupancy_grid: OccupancyGrid) -> OccupancyGrid:
+                                     current_occupancy_grid: OccupancyGrid) -> OccupancyGrid:
     
     # Iterate through the scan messages, compute the continuous position of each
     # of them.
