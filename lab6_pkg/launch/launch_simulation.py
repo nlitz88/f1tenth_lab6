@@ -41,7 +41,7 @@ def generate_launch_description():
         package="lab6_pkg",
         executable="laser_costmap_node.py",
         parameters=[simulation_params],
-        # remappings=[("", "")]
+        remappings=[("pose", "ego_racecar/pose")]
     )
     rrt_node = Node(
         package="lab6_pkg",
