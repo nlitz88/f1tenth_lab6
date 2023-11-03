@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This file contains the class definition for tree nodes and RRT
 Before you start, please read: https://arxiv.org/pdf/1105.1186.pdf
@@ -17,11 +18,13 @@ from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from nav_msgs.msg import OccupancyGrid
 
+from lab6_pkg.laser_costmap_utils import laser_update_occupancy_grid_temp
+
 # TODO: import as you need
 
 # class def for tree nodes
 # It's up to you if you want to use this
-class Node(object):
+class TreeNode(object):
     def __init__(self):
         self.x = None
         self.y = None
@@ -31,6 +34,8 @@ class Node(object):
 # class def for RRT
 class RRT(Node):
     def __init__(self):
+        super().__init__("rrt")
+
         # topics, not saved as attributes
         # TODO: grab topics from param file, you'll need to change the yaml file
         pose_topic = "ego_racecar/odom"
@@ -54,6 +59,10 @@ class RRT(Node):
             1)
         self.scan_sub_
 
+        self.__laser_occupancy_grid_publisher = self.create_publisher(msg_type=OccupancyGrid,
+                                                                      topic="laser_occupancy_grid",
+                                                                      qos_profile=10)
+
         # publishers
         # TODO: create a drive message publisher, and other publishers that you might need
 
@@ -74,6 +83,18 @@ class RRT(Node):
         Returns:
 
         """
+
+        # For now, let's just test generating and publishing an occupancy grid
+        # based on the laserscan message we get. Should publish it anyway just
+        # for the sake of being able to visualize what it's generating.
+        new_grid = OccupancyGrid()
+        new_grid.info.height = 1000
+        new_grid.info.width = 1000
+        new_grid.info.origin
+        updated_grid = laser_update_occupancy_grid_temp(scan_message=scan_msg,
+                                                        current_occupancy_grid=new_grid)
+        self.__laser_occupancy_grid_publisher.publish(updated_grid)
+
 
     def pose_callback(self, pose_msg):
         """
@@ -218,10 +239,8 @@ class RRT(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    print("RRT Initialized")
     rrt_node = RRT()
     rclpy.spin(rrt_node)
-
     rrt_node.destroy_node()
     rclpy.shutdown()
 

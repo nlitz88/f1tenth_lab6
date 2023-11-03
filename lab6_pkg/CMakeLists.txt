@@ -36,16 +36,16 @@ include_directories(
 )
 
 # Create Cpp executable
-add_executable(rrt_node src/rrt_node.cpp src/rrt.cpp)
+# add_executable(rrt_node src/rrt_node.cpp src/rrt.cpp)
 
-ament_target_dependencies(rrt_node 
-  rclcpp geometry_msgs ackermann_msgs nav_msgs sensor_msgs std_msgs visualization_msgs tf2_ros
-)
+# ament_target_dependencies(rrt_node 
+#   rclcpp geometry_msgs ackermann_msgs nav_msgs sensor_msgs std_msgs visualization_msgs tf2_ros
+# )
 
 # Install Cpp executables
-install(TARGETS
-  rrt_node
-  DESTINATION lib/${PROJECT_NAME})
+# install(TARGETS
+#   rrt_node
+#   DESTINATION lib/${PROJECT_NAME})
 
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
@@ -53,7 +53,20 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/rrt_node.py
+  scripts/laser_costmap_node.py
   DESTINATION lib/${PROJECT_NAME}
+)
+
+# Per https://roboticsbackend.com/ros2-yaml-params/#Why_using_YAML_for_ROS2_params
+# Install launch files in share directory.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+# Install config files in share directory.
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

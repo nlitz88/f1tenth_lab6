@@ -1,5 +1,5 @@
 import unittest
-from lab6_pkg.occupancy_grid_utils import *
+from lab6_pkg.laser_costmap_utils import *
 
 class TestPositionFromRange(unittest.TestCase):
     def test_position_from_range_positive_range(self):
