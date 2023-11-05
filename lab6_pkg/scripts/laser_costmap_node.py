@@ -59,14 +59,22 @@ class LaserCostmap(Node):
             new_grid = OccupancyGrid()
             # TODO THESE ARE ALL VALUES THAT SHOULD BE PARAMETERIZED FOR THIS NODE.
             new_grid.info.height = 100
-            new_grid.info.width = 10
+            height_m = new_grid.info.height*0.05
+            new_grid.info.width = 60
+            width_m = new_grid.info.width*0.05
             new_grid.info.resolution = 0.05
             # Specify the relative pose of the occupancy grid with respect to
             # the origin of the parent frame_id that we specify below! In this
             # case, I'll just place it at the origin of the base link frame.
+            # NOW, to center the underlying 2D grid at the origin of the parent
+            # frame, we just need to set its origin to be half of its height and
+            # width away from the parent frame origin. BUT CAREFUL--not its
+            # pixel/cell height and width away, but its height and width away in
+            # meters--as that is what the relative pose is specified in terms
+            # of!!! So, will have to convert.
             new_point = Point()
-            new_point.x = 0.0
-            new_point.y = 0.0
+            new_point.x = -(width_m/2.0) + 20.0
+            new_point.y = -(height_m/2.0)
             new_point.z = 0.0
             new_pose = Pose()
             new_pose.position = new_point
