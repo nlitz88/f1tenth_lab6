@@ -71,8 +71,15 @@ class LaserCostmap(Node):
             new_grid.header.frame_id = "ego_racecar/base_link"
             # Call helper function to actually project laserscan ranges on the
             # occupancy grid.
-            updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
-                                                            current_occupancy_grid=new_grid, logger=self.get_logger())
+            # updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
+            #                                                 current_occupancy_grid=new_grid,
+            #                                                 logger=self.get_logger())
+            # TODO: FIRST, just going to publish a fully occupied grid just to
+            # get a feel for what's going on here. Also, if the pose issue is
+            # giving me problems, may get rid of that lock, as I don't think
+            # there are multiple threads running in this node's process yet.
+            new_grid.data = [100]*new_grid.info.height*new_grid.info.width
+            updated_grid = new_grid
             # Publish the updated grid.
             self.__laser_local_costmap_publisher.publish(updated_grid)
             self.get_logger().info(f"Published new local occupancy grid!")
