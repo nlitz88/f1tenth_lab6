@@ -158,6 +158,8 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     for i in range(len(x_cell_coords)):
         # current_occupancy_grid.data[x_cell_coords[i]*width+y_cell_coords[i]] =
         # 1
+        # NOTE: I had the above wrong. I was not following row major order
+        # above.
         numpy_occupancy_grid[x_cell_coords[i], y_cell_coords[i]] = 1
     # Reshape 2D numpy array into row-major order to store in occupancygrid
     # array.

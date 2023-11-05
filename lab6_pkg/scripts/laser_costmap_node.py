@@ -4,7 +4,7 @@ from threading import Lock
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
-from geometry_msgs.msg import PoseWithCovarianceStamped, Pose
+from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, Point
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Path
 
@@ -53,21 +53,43 @@ class LaserCostmap(Node):
     def __laserscan_callback(self, laserscan_msg: LaserScan) -> None:
 
         try:
+            self.get_logger().info("Received new laser scan!")
             # For now, just create a brand new occupancy grid and pass it into the
             # utils function to see what happens. need to set origin of that grid.
             new_grid = OccupancyGrid()
             # TODO THESE ARE ALL VALUES THAT SHOULD BE PARAMETERIZED FOR THIS NODE.
-            new_grid.info.height = 10
+            new_grid.info.height = 100
             new_grid.info.width = 10
             new_grid.info.resolution = 0.05
-            with self.__pose_lock:
-                new_grid.info.origin = self.__pose
+            # Specify the relative pose of the occupancy grid with respect to
+            # the origin of the parent frame_id that we specify below! In this
+            # case, I'll just place it at the origin of the base link frame.
+            new_point = Point()
+            new_point.x = 0.0
+            new_point.y = 0.0
+            new_point.z = 0.0
+            new_pose = Pose()
+            new_pose.position = new_point
+            new_grid.info.origin = new_pose
             # Fill out the new grid's header. Set its parent frame equal to the
             # laser's frame (the frame that the laser scans are w.r.t.).
             new_grid.header.stamp = self.get_clock().now().to_msg()
             # new_grid.header.frame_id = laserscan_msg.header.frame_id #
             # WAIT--do laser scan values NOT have a frame??? No, nevermind,
             # that's not the issue.
+            # THIS IS THE PROBLEM with the weird position. We're treating THE
+            # POINTS in the occupancy grid as if they're in the base link's
+            # frame. Therefore, if we're publishing this grid with a parent
+            # frame id equal to the car's frame, then its origin that we specify
+            # must be WITH RESPECT TO THE FRAME IT'S in. Therefore, we don't
+            # actually need to get the pose of the car in this case--we only
+            # need to know the RELATIVE pose of the occupancy grid with respect
+            # to the car's base_link. I.e., how we want to offset it. And
+            # ideally, the occupancy grid should be offset by the transform
+            # between the laser frame and the base link frame. Technically, we
+            # could even just say that the occupancy grid is in the frame of the
+            # laser! That may just be easier for our simple application--but
+            # I'll use base link first.
             new_grid.header.frame_id = "ego_racecar/base_link"
             # Call helper function to actually project laserscan ranges on the
             # occupancy grid.
@@ -78,8 +100,18 @@ class LaserCostmap(Node):
             # get a feel for what's going on here. Also, if the pose issue is
             # giving me problems, may get rid of that lock, as I don't think
             # there are multiple threads running in this node's process yet.
-            new_grid.data = [100]*new_grid.info.height*new_grid.info.width
+            data_list = []
+            column = [100]*(new_grid.info.width-3) + [50]*3
+            data_list += column*new_grid.info.height
+            new_grid.data = data_list
             updated_grid = new_grid
+            # TODO: Okay, can successfully visualize what's going on now, but
+            # the costmap isn't center on the car. Granted, though, it doesn't
+            # necessarily "have" to be. That's just how RVIZ is interpretting
+            # it. What's important is how the points are projected and laid out
+            # inside of it! I have a suspicion that this is being caused by
+            # either its parent frame id being set incorrectly or its origin
+            # being wrong?
             # Publish the updated grid.
             self.__laser_local_costmap_publisher.publish(updated_grid)
             self.get_logger().info(f"Published new local occupancy grid!")
