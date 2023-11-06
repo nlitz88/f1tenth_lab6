@@ -18,9 +18,12 @@ car_pose_publisher:
     source_frame: "ego_racecar/base_link"
     target_frame: "map"
 
-# laser_costmap:
-#   ros__parameters:
-
+laser_costmap:
+  ros__parameters:
+    height_c: 100
+    width_c: 75
+    resolution_m_c: 0.05
+    splat_radius: 4
 
 # rrt:
 #   ros__parameters:
