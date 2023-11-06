@@ -239,17 +239,30 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     x_cell_coords = np.array(grid_resolution_c_m*points_x_m, dtype=np.int32)
     y_cell_coords = np.array(grid_resolution_c_m*points_y_m, dtype=np.int32)
     
-    # Filter out the coordinates that fall outside of the grid.
-    # I.e., if the point is out of the range, then I want to completely drop
-    # these coordinates--I don't even want them being drawn on the grid. I.e., I
-    # don't want all the filtered out points to just be hanging around at 0,0
-    # right in front of the car! 
-    # Use numpy boolean array indexing to select only the x and y coordinates
-    # that fall within the width and height of the grid, respectively.
+    # Do the numpy equivalent of zipping together the pairs of x and y
+    # coordinates.
     cell_coords = np.stack(arrays=[x_cell_coords, y_cell_coords], axis=1)
+    
+    # Rather than calling the below functions, just going to do things in here
+    # for speed. No new cell coordinates should be introduced beyond this point.
+    # THe process below is strictly for filtering and plotting.
 
-    plot_coords_on_occupancy_grid(cell_coordinates=cell_coords,
-                                  occupancy_grid=current_occupancy_grid)
+    # 1. Filter out cell coordinates/indices that are out of bounds.
+    filtered_cell_coords = cell_coords[(cell_coords[:, 0] <= current_occupancy_grid.info.width-1)*(cell_coords[:, 0] >= 0)*\
+                                       (cell_coords[:, 1] <= current_occupancy_grid.info.height-1)*(cell_coords[:, 1] >= 0)]
+    
+    # 2. Index into the occupancy grid's data and set the cost value at each
+    #    valid location from above. NOTE that for now, we're just
+    #    unconditionally setting the cost to 100 to start.
+    # numpy_occupancy_grid = np.reshape(list(current_occupancy_grid.data), newshape=(current_occupancy_grid.info.height, current_occupancy_grid.info.width))
+    numpy_occupancy_grid = np.zeros(shape=(current_occupancy_grid.info.height, current_occupancy_grid.info.width), dtype=np.int8)
+    # numpy_occupancy_grid[filtered_cell_coords[:,1], filtered_cell_coor    ds[:,0]] = 100
+    for cell_coords in filtered_cell_coords:
+        numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
+    current_occupancy_grid.data = numpy_occupancy_grid.flatten().tolist()
+    
+    # plot_coords_on_occupancy_grid(cell_coordinates=cell_coords,
+    #                               occupancy_grid=current_occupancy_grid)
 
     # Return updated current occupancy grid.
     return current_occupancy_grid
