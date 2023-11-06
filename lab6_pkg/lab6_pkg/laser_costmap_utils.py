@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 import numpy as np
 import math
 from dataclasses import dataclass
@@ -135,6 +135,79 @@ def laser_update_occupancy_grid(scan_message: LaserScan,
     
     pass
 
+def filter_grid_coordinates(cell_coordinates: np.ndarray, grid_width: int, grid_height: int) -> np.ndarray:
+    """Filters out (x,y) coordinate pairs from the provided cell_coordinates 2D
+    numpy array if they're out of bounds of the occupancy grid, according to the
+    specified height and width of the grid. 
+
+    Args:
+        cell_coordinates (np.ndarray): 2D numpy array of grid cell coordinates.
+        grid_width (int): The number of grid cells along x-axis.
+        grid_height (int): The number of grid cells along the y-axis.
+
+    Returns:
+        np.ndarray: A subset of the provided cell coordinates that fall within
+        the grid.
+    """
+    return cell_coordinates[(cell_coordinates[:, 0] <= grid_width-1)*(cell_coordinates[:, 0] >= 0)*\
+                                       (cell_coordinates[:, 1] <= grid_height-1)*(cell_coordinates[:, 1] >= 0)]
+
+
+def twod_numpy_from_occupancy_grid(occupancy_grid: OccupancyGrid) -> np.ndarray:
+    """Returns a 2D numpy array constructed from the row-major data field of the
+    provided occupancy grid. Note that the 2D array returned by this function
+    has x increasing with each column and y increasing with each consecutive
+    row. Therefore, you index it like "grid[y,x]" instead of "grid[x,y]."
+
+    Args:
+        occupancy_grid (OccupancyGrid): Occupancy grid instance that the 2D
+        array will be derived from.
+
+    Returns:
+        np.ndarray: The 2D numpy array constructed from the data of the provided
+        occupancy grid.
+    """
+    return np.array(occupancy_grid.data, dtype=np.int8).reshape(shape=(occupancy_grid.info.height, occupancy_grid.info.width))
+
+def occupancy_grid_from_twod_numpy(twod_numpy_array: np.ndarray) -> List[int]:
+    """Returns the row-major 1D array that resultings from flattening the
+    provided 2D numpy array. I.e., the form of the 2D array the Occupancy Grid
+    message type is expecting.
+
+    Args:
+        twod_numpy_array (np.ndarray): The 2D numpy array containing your
+        occupancy grid data.
+
+    Returns:
+        List[int]: The row-major formatted list of integers derived from
+        flattening the provided 2D array.
+    """
+    return twod_numpy_array.flatten().tolist()
+
+def get_cell_cost() -> int:
+    """Temporary function for returning the hardcoded cost value. In the future,
+    this would likely be updated to incorporate some sort of probability based
+    calculation.
+
+    Returns:
+        int: Cost probability as an integer between 0-->100.
+    """
+    return 100
+
+def plot_coords_on_occupancy_grid(cell_coordinates: np.ndarray, occupancy_grid: OccupancyGrid) -> None:
+
+    # 1. Filter out cell coordinates/indices that are out of bounds.
+    filtered_cell_coords = filter_grid_coordinates(cell_coordinates=cell_coordinates,
+                                                   grid_width=occupancy_grid.info.width,
+                                                   grid_height=occupancy_grid.info.height)
+    
+    # 2. Index into the occupancy grid's data and set the cost value at each
+    #    valid location from above. NOTE that for now, we're just
+    #    unconditionally setting the cost to 100 to start.
+    numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=occupancy_grid)
+    numpy_occupancy_grid[filtered_cell_coords] = get_cell_cost()
+    occupancy_grid.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
+
 # This is going to be a QUICK implementation of the more robust implementation
 # above. If this works, I can re-implement this in a cleaner way (I.e., breaking
 # things up like above).
@@ -174,47 +247,8 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # that fall within the width and height of the grid, respectively.
     cell_coords = np.stack(arrays=[x_cell_coords, y_cell_coords], axis=1)
 
-    # TODO: Everything below and including this line should be in its own
-    # function. The idea should be that you can come up with ANY cell
-    # coordinates that you want, whether they're inside the grid or not. Then,
-    # this proposed function takes all those coordinates, filters out
-    # unreasonable ones, and plots the reasonable ones. The idea is that the
-    # caller can flexibly/sloppily generate points with filters or whatever
-    # they're doing, and this function will take care of the cleanup in one
-    # place. Call this function like "project" or "plot"
-    filtered_cell_coords = cell_coords[(cell_coords[:, 0] <= current_occupancy_grid.info.width-1)*(cell_coords[:, 0] >= 0)*\
-                                       (cell_coords[:, 1] <= current_occupancy_grid.info.height-1)*(cell_coords[:, 1] >= 0)]
-
-    # 2. Once we have the indices of the points of where the LiDAR scan ranges
-    #    fall in the occupancy grid, we can now draw them on the occupancy grid.
-    #    TODO: THIS SHOULD REALLY BE its own function. 
+    plot_coords_on_occupancy_grid(cell_coordinates=cell_coords,
+                                  occupancy_grid=current_occupancy_grid)
     
-    # Create a 2D numpy array to serve as an easier to work with, temporary
-    # occupancy grid that we'll convert to our actual grid later.
-    numpy_occupancy_grid = np.zeros(shape=(current_occupancy_grid.info.height, current_occupancy_grid.info.width), dtype=np.int8)
-
-    # TODO Could probably replace this for loop with a numpy operation to index
-    # the 2D array using the x_cell_coords and y_cell_coords array.
-    for cell_coords in filtered_cell_coords:
-        # TODO: Add "splatting" here as a way to "inflate" observed obstacles.
-        numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
-
-        # How can we update multiple grid points at one time? I.e., I think we
-        # cna use some creative numpy indexing to select multiple entries at a
-        # time to update. I.e., take the cell_coords and compute all the coords
-        # around it too, and set those to 1. That's the simplest answer.
-
-        # OR, can treat it more like a kernel, where we have a grid of 1's and
-        # we just add it on wherever. Because we don't have any padding around
-        # our grid, could just make 
-        
-        # Could take 2D array of x,y coordinate values and offset them by teh
-        # position we want to splat at. The beauty is, the coordinates would
-        # just be positive or negative OFFSETS from the middle point. 
-
-    # Once all the LiDAR landing locations have been marked, can flatten this
-    # array and assign it to the occupancy grid.
-    current_occupancy_grid.data = numpy_occupancy_grid.flatten().tolist()
-
     # Return updated current occupancy grid.
     return current_occupancy_grid
