@@ -167,7 +167,8 @@ def twod_numpy_from_occupancy_grid(occupancy_grid: OccupancyGrid) -> np.ndarray:
         np.ndarray: The 2D numpy array constructed from the data of the provided
         occupancy grid.
     """
-    return np.array(occupancy_grid.data, dtype=np.int8).reshape(shape=(occupancy_grid.info.height, occupancy_grid.info.width))
+    return np.reshape(list(occupancy_grid.data), newshape=(occupancy_grid.info.height, occupancy_grid.info.width))
+    # return np.array(occupancy_grid.data, dtype=np.int8).reshape((occupancy_grid.info.height, occupancy_grid.info.width))
 
 def occupancy_grid_from_twod_numpy(twod_numpy_array: np.ndarray) -> List[int]:
     """Returns the row-major 1D array that resultings from flattening the
@@ -205,7 +206,7 @@ def plot_coords_on_occupancy_grid(cell_coordinates: np.ndarray, occupancy_grid: 
     #    valid location from above. NOTE that for now, we're just
     #    unconditionally setting the cost to 100 to start.
     numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=occupancy_grid)
-    numpy_occupancy_grid[filtered_cell_coords] = get_cell_cost()
+    numpy_occupancy_grid[filtered_cell_coords[:,1], filtered_cell_coords[:,0]] = get_cell_cost()
     occupancy_grid.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
 
 # This is going to be a QUICK implementation of the more robust implementation
@@ -249,6 +250,6 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
 
     plot_coords_on_occupancy_grid(cell_coordinates=cell_coords,
                                   occupancy_grid=current_occupancy_grid)
-    
+
     # Return updated current occupancy grid.
     return current_occupancy_grid

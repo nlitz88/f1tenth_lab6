@@ -99,6 +99,9 @@ class LaserCostmap(Node):
             # laser! That may just be easier for our simple application--but
             # I'll use base link first.
             new_grid.header.frame_id = "ego_racecar/base_link"
+            # Temporarily populate the occupancy grid data with zeros as if
+            # there were values from the previous timestep.
+            new_grid.data = np.zeros(shape=(new_grid.info.height, new_grid.info.width), dtype=np.int8).flatten().tolist()
             # Call helper function to actually project laserscan ranges on the
             # occupancy grid.
             updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
