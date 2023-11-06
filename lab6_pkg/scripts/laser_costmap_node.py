@@ -124,7 +124,7 @@ class LaserCostmap(Node):
             self.__laser_local_costmap_publisher.publish(updated_grid)
             self.get_logger().info(f"Published new local occupancy grid!")
         except Exception as exc:
-            self.get_logger().warning(f"Failed to generate costmap from laserscan message.\nException: {str(exc)}")
+            self.get_logger().warning(f"Failed to generate costmap from laserscan message.\nException: {str(exc.with_traceback())}")
 
 def main(args=None):
     rclpy.init(args=args)
