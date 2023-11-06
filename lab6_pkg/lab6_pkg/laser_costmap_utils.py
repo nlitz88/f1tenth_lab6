@@ -232,15 +232,12 @@ def get_splat_cells(splat_point: Tuple[int, int], splat_radius_c: int) -> np.nda
             splat_cell_offsets.append([x,y])
     return splat_cell_offsets
 
-# This is going to be a QUICK implementation of the more robust implementation
-# above. If this works, I can re-implement this in a cleaner way (I.e., breaking
-# things up like above).
+# More optimized version of the above function but with fewer safeguards and
+# individually tested functions. I.e., lower SIL code.
 def laser_update_occupancy_grid_temp(scan_message: LaserScan,
                                      current_occupancy_grid: OccupancyGrid,
-                                     splat_radius,
-                                     logger) -> OccupancyGrid:
+                                     splat_radius) -> OccupancyGrid:
     
-
     # 1.) Get coordinates of where (in range) Lidar scan ranges are projected
     # into the 2D occupancy grid's coordinate system.
     
@@ -271,17 +268,6 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # better off sliding a guassian filter across and just thresholding. Adjust
     # the standard deviation (width) of the guassian distribution to determine
     # how much it inflates obstacles. 
-    
-    # splat_radius = 4
-    # splat_coords = []
-    # for cell_coord in cell_coords:
-    #     splat_points = get_splat_cells(cell_coord, splat_radius)
-    #     splat_coords += splat_points
-    # cell_coords = np.array(list(cell_coords.tolist()) + splat_coords)
-    
-    # Rather than calling the below functions, just going to do things in here
-    # for speed. No new cell coordinates should be introduced beyond this point.
-    # THe process below is strictly for filtering and plotting.
 
     # 1. Filter out cell coordinates/indices that are out of bounds.
     filtered_cell_coords = cell_coords[(cell_coords[:, 0] <= current_occupancy_grid.info.width-1)*(cell_coords[:, 0] >= 0)*\
@@ -311,9 +297,6 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
         # as "how do I draw a circle or a square centered at a point in an
         # image" for opencv. This is not a hard problem.
     current_occupancy_grid.data = numpy_occupancy_grid.flatten().tolist()
-    
-    # plot_coords_on_occupancy_grid(cell_coordinates=cell_coords,
-    #                               occupancy_grid=current_occupancy_grid)
 
     # Return updated current occupancy grid.
     return current_occupancy_grid

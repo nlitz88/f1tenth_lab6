@@ -16,6 +16,19 @@ class LaserCostmap(Node):
         super().__init__("laser_costmap")
 
         # Set up / declare node parameters.
+        self.declare_parameters(namespace="",
+                                parameters=[
+                                    ("height_c", 75),
+                                    ("width_c", 100),
+                                    ("resolution_m_c", 0.05),
+                                    ("splat_radius_c", 4)
+                                ])
+        self.__height_c = self.get_parameter("height_c").value
+        self.__width_c = self.get_parameter("width_c").value
+        self.__x_origin_offset = 0
+        self.__y_origin_offset = 0
+        self.__resolution_m_c = self.get_parameter("resolution_m_c").value
+        self.__splat_radius_c = self.get_parameter("splat_radius_c").value
 
         # Set up subscriber for incoming LaserScan messages.
         self.__laserscan_subscriber = self.create_subscription(msg_type=LaserScan,
@@ -58,11 +71,11 @@ class LaserCostmap(Node):
             # utils function to see what happens. need to set origin of that grid.
             new_grid = OccupancyGrid()
             # TODO THESE ARE ALL VALUES THAT SHOULD BE PARAMETERIZED FOR THIS NODE.
-            new_grid.info.height = 200
-            height_m = new_grid.info.height*0.05
-            new_grid.info.width = 200
-            width_m = new_grid.info.width*0.05
-            new_grid.info.resolution = 0.05
+            new_grid.info.height = self.__height_c
+            height_m = new_grid.info.height*self.__resolution_m_c
+            new_grid.info.width = self.__width_c
+            width_m = new_grid.info.width*self.__resolution_m_c
+            new_grid.info.resolution = self.__resolution_m_c
             # Specify the relative pose of the occupancy grid with respect to
             # the origin of the parent frame_id that we specify below! In this
             # case, I'll just place it at the origin of the base link frame.
@@ -106,8 +119,7 @@ class LaserCostmap(Node):
             # occupancy grid.
             updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
                                                             current_occupancy_grid=new_grid,
-                                                            splat_radius=4,
-                                                            logger=self.get_logger())
+                                                            splat_radius=self.__splat_radius_c)
             # TODO: FIRST, just going to publish a fully occupied grid just to
             # get a feel for what's going on here. Also, if the pose issue is
             # giving me problems, may get rid of that lock, as I don't think
