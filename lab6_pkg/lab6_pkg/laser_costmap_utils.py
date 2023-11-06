@@ -296,9 +296,16 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     for cell_coords in filtered_cell_coords:
         numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
         # Additional points to apply splat. Not very robust/clean, but fast.
-        # numpy_occupancy_grid[cell_coords[1]+1, cell_coords[0]+1] = 100
-        # numpy_occupancy_grid[cell_coords[1]+1, cell_coords[0]] = 100
-        # numpy_occupancy_grid[cell_coords[1]+1, cell_coords[0]] = 100
+        # Determine the coordinates of the "splat" rectangle that surrounds the
+        # point we'd like to splat at.
+        x = cell_coords[0]
+        y = cell_coords[1]
+        y_min = max(0, min(y-splat_radius, current_occupancy_grid.info.height))
+        y_max = max(0, min(y+splat_radius, current_occupancy_grid.info.height))
+        x_min = max(0, min(x-splat_radius, current_occupancy_grid.info.width))
+        x_max = max(0, min(x+splat_radius, current_occupancy_grid.info.width))
+        # "Select" all the points within the splat rectangle and set their cost.
+        numpy_occupancy_grid[y_min:y_max, x_min:x_max] = 100
         # TODO: Look up a way to just add a hardcoded filter centered somewhere
         # on a larger 2D numpy array. This is basically just the same question
         # as "how do I draw a circle or a square centered at a point in an

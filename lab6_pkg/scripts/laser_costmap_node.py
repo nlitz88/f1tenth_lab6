@@ -106,7 +106,7 @@ class LaserCostmap(Node):
             # occupancy grid.
             updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
                                                             current_occupancy_grid=new_grid,
-                                                            splat_radius=3,
+                                                            splat_radius=4,
                                                             logger=self.get_logger())
             # TODO: FIRST, just going to publish a fully occupied grid just to
             # get a feel for what's going on here. Also, if the pose issue is
