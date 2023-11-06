@@ -173,11 +173,21 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # Use numpy boolean array indexing to select only the x and y coordinates
     # that fall within the width and height of the grid, respectively.
     cell_coords = np.stack(arrays=[x_cell_coords, y_cell_coords], axis=1)
+
+    # TODO: Everything below and including this line should be in its own
+    # function. The idea should be that you can come up with ANY cell
+    # coordinates that you want, whether they're inside the grid or not. Then,
+    # this proposed function takes all those coordinates, filters out
+    # unreasonable ones, and plots the reasonable ones. The idea is that the
+    # caller can flexibly/sloppily generate points with filters or whatever
+    # they're doing, and this function will take care of the cleanup in one
+    # place. Call this function like "project" or "plot"
     filtered_cell_coords = cell_coords[(cell_coords[:, 0] <= current_occupancy_grid.info.width-1)*(cell_coords[:, 0] >= 0)*\
                                        (cell_coords[:, 1] <= current_occupancy_grid.info.height-1)*(cell_coords[:, 1] >= 0)]
 
     # 2. Once we have the indices of the points of where the LiDAR scan ranges
     #    fall in the occupancy grid, we can now draw them on the occupancy grid.
+    #    TODO: THIS SHOULD REALLY BE its own function. 
     
     # Create a 2D numpy array to serve as an easier to work with, temporary
     # occupancy grid that we'll convert to our actual grid later.
@@ -188,6 +198,19 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     for cell_coords in filtered_cell_coords:
         # TODO: Add "splatting" here as a way to "inflate" observed obstacles.
         numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
+
+        # How can we update multiple grid points at one time? I.e., I think we
+        # cna use some creative numpy indexing to select multiple entries at a
+        # time to update. I.e., take the cell_coords and compute all the coords
+        # around it too, and set those to 1. That's the simplest answer.
+
+        # OR, can treat it more like a kernel, where we have a grid of 1's and
+        # we just add it on wherever. Because we don't have any padding around
+        # our grid, could just make 
+        
+        # Could take 2D array of x,y coordinate values and offset them by teh
+        # position we want to splat at. The beauty is, the coordinates would
+        # just be positive or negative OFFSETS from the middle point. 
 
     # Once all the LiDAR landing locations have been marked, can flatten this
     # array and assign it to the occupancy grid.
