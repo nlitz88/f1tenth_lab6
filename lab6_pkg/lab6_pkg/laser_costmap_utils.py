@@ -114,6 +114,9 @@ def laser_update_occupancy_grid(scan_message: LaserScan,
     #    transformation between them. Take those points and apply a translation
     #    and rotation to get them in terms of the actual occupancy grid origin
     #    (I.e., rows and columns of the 2D array).
+
+    # COULD USE THE NEW METHOD ABOVE WHERE WE ACKNOWLEDGE THAT THERE IS ONLY A
+    # TRANSLATION, BUT NO ROTATIONS.
     
     pass
 
@@ -141,6 +144,9 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # grid frame exact opposite basis vector directions for x and y axis.
     height = current_occupancy_grid.info.height
     width = current_occupancy_grid.info.width
+    # TODO: Don't have to perform this transformation, as we're using a right
+    # hand coordinate frame for the occupancy grid that matches the base link
+    # frame, just with an offset (translation).
     x_cell_coords: np.ndarray = -x_cell_coords + np.floor(height/2)
     y_cell_coords: np.ndarray = -y_cell_coords + np.floor(width/2)
     # Convert these to integer coordinate indices.
@@ -160,11 +166,12 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
         # 1
         # NOTE: I had the above wrong. I was not following row major order
         # above.
-        numpy_occupancy_grid[x_cell_coords[i], y_cell_coords[i]] = 1
+        numpy_occupancy_grid[x_cell_coords[i], y_cell_coords[i]] = 100
     # Reshape 2D numpy array into row-major order to store in occupancygrid
     # array.
-    # current_occupancy_grid.data = list(numpy_occupancy_grid.flatten())
-    current_occupancy_grid.data = [100]
+    temp_array = [int(num) for num in list(numpy_occupancy_grid.flatten())]
+    current_occupancy_grid.data = temp_array
+    # current_occupancy_grid.data = [100]*height*width
     
 
     # Return updated current occupancy grid.

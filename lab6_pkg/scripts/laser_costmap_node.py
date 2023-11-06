@@ -58,9 +58,9 @@ class LaserCostmap(Node):
             # utils function to see what happens. need to set origin of that grid.
             new_grid = OccupancyGrid()
             # TODO THESE ARE ALL VALUES THAT SHOULD BE PARAMETERIZED FOR THIS NODE.
-            new_grid.info.height = 100
+            new_grid.info.height = 200
             height_m = new_grid.info.height*0.05
-            new_grid.info.width = 60
+            new_grid.info.width = 200
             width_m = new_grid.info.width*0.05
             new_grid.info.resolution = 0.05
             # Specify the relative pose of the occupancy grid with respect to
@@ -73,7 +73,7 @@ class LaserCostmap(Node):
             # meters--as that is what the relative pose is specified in terms
             # of!!! So, will have to convert.
             new_point = Point()
-            new_point.x = -(width_m/2.0) + 20.0
+            new_point.x = 0.0
             new_point.y = -(height_m/2.0)
             new_point.z = 0.0
             new_pose = Pose()
@@ -101,18 +101,18 @@ class LaserCostmap(Node):
             new_grid.header.frame_id = "ego_racecar/base_link"
             # Call helper function to actually project laserscan ranges on the
             # occupancy grid.
-            # updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
-            #                                                 current_occupancy_grid=new_grid,
-            #                                                 logger=self.get_logger())
+            updated_grid = laser_update_occupancy_grid_temp(scan_message=laserscan_msg,
+                                                            current_occupancy_grid=new_grid,
+                                                            logger=self.get_logger())
             # TODO: FIRST, just going to publish a fully occupied grid just to
             # get a feel for what's going on here. Also, if the pose issue is
             # giving me problems, may get rid of that lock, as I don't think
             # there are multiple threads running in this node's process yet.
-            data_list = []
-            column = [100]*(new_grid.info.width-3) + [50]*3
-            data_list += column*new_grid.info.height
-            new_grid.data = data_list
-            updated_grid = new_grid
+            # data_list = []
+            # column = [100]*(new_grid.info.width-3) + [50]*3
+            # data_list += column*new_grid.info.height
+            # new_grid.data = data_list
+            # updated_grid = new_grid
             # TODO: Okay, can successfully visualize what's going on now, but
             # the costmap isn't center on the car. Granted, though, it doesn't
             # necessarily "have" to be. That's just how RVIZ is interpretting
