@@ -166,17 +166,12 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     y_cell_coords = np.array(grid_resolution_c_m*points_y_m, dtype=np.int32)
     
     # Filter out the coordinates that fall outside of the grid.
-    # Actually, needs to be done differently. I.e., if it's out of the range,
-    # then I want to completely drop these coordinates--I don't even want them
-    # being drawn on the grid. I.e., I don't want all the filtered out points to
-    # just be hanging around at 0,0 right in front of the car!
+    # I.e., if the point is out of the range, then I want to completely drop
+    # these coordinates--I don't even want them being drawn on the grid. I.e., I
+    # don't want all the filtered out points to just be hanging around at 0,0
+    # right in front of the car! 
     # Use numpy boolean array indexing to select only the x and y coordinates
     # that fall within the width and height of the grid, respectively.
-
-    # UPDATE: Found a bug. Basically, if I can't filter these two out
-    # separately. I.e., if the ith x cell coord is out of bounds, then the
-    # corresponding ith y coord also needs to go--as the pair of them (that
-    # point) is being discarded.
     cell_coords = np.stack(arrays=[x_cell_coords, y_cell_coords], axis=1)
     filtered_cell_coords = cell_coords[(cell_coords[:, 0] <= current_occupancy_grid.info.width-1)*(cell_coords[:, 0] >= 0)*\
                                        (cell_coords[:, 1] <= current_occupancy_grid.info.height-1)*(cell_coords[:, 1] >= 0)]
@@ -192,12 +187,6 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # the 2D array using the x_cell_coords and y_cell_coords array.
     for cell_coords in filtered_cell_coords:
         # TODO: Add "splatting" here as a way to "inflate" observed obstacles.
-        # NOTE: I'm wondering: numpy uses indexing [row, column]--but we know
-        # that when we flatten this, it's expecting that x values are referring
-        # to the column instead. I didn't think we'd have to worry about that
-        # here. Well, rather, remember how the theme has been that the x basis
-        # vector has effectively been acting like our width? (even though it's
-        # called height?). Maybe same idea applies here.
         numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
 
     # Once all the LiDAR landing locations have been marked, can flatten this
