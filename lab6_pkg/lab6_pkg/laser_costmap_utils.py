@@ -209,11 +209,36 @@ def plot_coords_on_occupancy_grid(cell_coordinates: np.ndarray, occupancy_grid: 
     numpy_occupancy_grid[filtered_cell_coords[:,1], filtered_cell_coords[:,0]] = get_cell_cost()
     occupancy_grid.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
 
+def get_splat_radius(car_width: float, map_resolution_m_c: float) -> int:
+    return 0.5*car_width*(1.0/map_resolution_m_c)
+
+def get_splat_cells(splat_point: Tuple[int, int], splat_radius_c: int) -> np.ndarray:
+    """Generates the "splat" filter centered at a particular point. Returns the
+    (x,y) coordinate for every cell around the splat_point within the specified
+    splat_radius. 
+
+    Args:
+        splat_point (Point): The (x,y) cell location of the point you want to
+        splat.
+        splat_radius_c (int): The splat radius (in number of cells).
+
+    Returns:
+        np.ndarray: The 2D array containing all the coordinates of the
+        surrounding splat points.
+    """
+    splat_cell_offsets = []
+    for x in range(splat_point[0] + splat_radius_c, splat_point[0] - splat_radius_c - 1, -1):
+        for y in range(splat_point[1] + splat_radius_c, splat_point[1] - splat_radius_c - 1, -1):
+            splat_cell_offsets.append([x,y])
+    return splat_cell_offsets
+
 # This is going to be a QUICK implementation of the more robust implementation
 # above. If this works, I can re-implement this in a cleaner way (I.e., breaking
 # things up like above).
 def laser_update_occupancy_grid_temp(scan_message: LaserScan,
-                                     current_occupancy_grid: OccupancyGrid, logger) -> OccupancyGrid:
+                                     current_occupancy_grid: OccupancyGrid,
+                                     splat_radius,
+                                     logger) -> OccupancyGrid:
     
 
     # 1.) Get coordinates of where (in range) Lidar scan ranges are projected
@@ -242,6 +267,16 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # Do the numpy equivalent of zipping together the pairs of x and y
     # coordinates.
     cell_coords = np.stack(arrays=[x_cell_coords, y_cell_coords], axis=1)
+    # Splatting is going to be VERY expensive--like O(n^3). I think we'd be much
+    # better off sliding a guassian filter across and just thresholding. Adjust
+    # the standard deviation (width) of the guassian distribution to determine
+    # how much it inflates obstacles. 
+    splat_radius = 4
+    splat_coords = []
+    for cell_coord in cell_coords:
+        splat_points = get_splat_cells(cell_coord, splat_radius)
+        splat_coords += splat_points
+    cell_coords = np.array(list(cell_coords.tolist()) + splat_coords)
     
     # Rather than calling the below functions, just going to do things in here
     # for speed. No new cell coordinates should be introduced beyond this point.
