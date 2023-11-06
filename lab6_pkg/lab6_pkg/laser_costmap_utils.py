@@ -144,11 +144,10 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # grid frame exact opposite basis vector directions for x and y axis.
     height = current_occupancy_grid.info.height
     width = current_occupancy_grid.info.width
-    # TODO: Don't have to perform this transformation, as we're using a right
-    # hand coordinate frame for the occupancy grid that matches the base link
-    # frame, just with an offset (translation).
-    x_cell_coords: np.ndarray = -x_cell_coords + np.floor(height/2)
-    y_cell_coords: np.ndarray = -y_cell_coords + np.floor(width/2)
+    # Apply translation-only transform from the base link (technically laser's)
+    # frame origin to the origin of the occupancy grid at the bottom right.
+    x_cell_coords: np.ndarray = x_cell_coords + np.floor(height/2)
+    y_cell_coords: np.ndarray = y_cell_coords + np.floor(width/2)
     # Convert these to integer coordinate indices.
     x_cell_coords = x_cell_coords.astype(dtype=np.int32)
     y_cell_coords = y_cell_coords.astype(dtype=np.int32)
@@ -158,7 +157,7 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # Finally, update the cells at the coordinates in the grid that these LiDAR
     # points fall into.
     # BUT FIRST, have to initialize the data array.
-    numpy_occupancy_grid = np.zeros(shape=(height, width), dtype=np.int8)
+    numpy_occupancy_grid = np.zeros(shape=(height, width), dtype=int)
     # NOTE: Row major indexing. Need to multiply by "width" by number in x, and
     # then add number in y.
     for i in range(len(x_cell_coords)):
@@ -166,11 +165,13 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
         # 1
         # NOTE: I had the above wrong. I was not following row major order
         # above.
-        numpy_occupancy_grid[x_cell_coords[i], y_cell_coords[i]] = 100
+        numpy_occupancy_grid[x_cell_coords[i], y_cell_coords[i]] = int(100)
     # Reshape 2D numpy array into row-major order to store in occupancygrid
     # array.
-    temp_array = [int(num) for num in list(numpy_occupancy_grid.flatten())]
-    current_occupancy_grid.data = temp_array
+    temp_array = list(numpy_occupancy_grid.flatten())
+    # temp_array = [int(num) for num in list(numpy_occupancy_grid.flatten())]
+    # temp_array = numpy_occupancy_grid.astype(dtype=int)
+    current_occupancy_grid.data = numpy_occupancy_grid.flatten().tolist()
     # current_occupancy_grid.data = [100]*height*width
     
 
