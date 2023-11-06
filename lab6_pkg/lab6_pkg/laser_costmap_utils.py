@@ -271,12 +271,13 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # better off sliding a guassian filter across and just thresholding. Adjust
     # the standard deviation (width) of the guassian distribution to determine
     # how much it inflates obstacles. 
-    splat_radius = 4
-    splat_coords = []
-    for cell_coord in cell_coords:
-        splat_points = get_splat_cells(cell_coord, splat_radius)
-        splat_coords += splat_points
-    cell_coords = np.array(list(cell_coords.tolist()) + splat_coords)
+    
+    # splat_radius = 4
+    # splat_coords = []
+    # for cell_coord in cell_coords:
+    #     splat_points = get_splat_cells(cell_coord, splat_radius)
+    #     splat_coords += splat_points
+    # cell_coords = np.array(list(cell_coords.tolist()) + splat_coords)
     
     # Rather than calling the below functions, just going to do things in here
     # for speed. No new cell coordinates should be introduced beyond this point.
@@ -294,6 +295,14 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # numpy_occupancy_grid[filtered_cell_coords[:,1], filtered_cell_coor    ds[:,0]] = 100
     for cell_coords in filtered_cell_coords:
         numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
+        # Additional points to apply splat. Not very robust/clean, but fast.
+        # numpy_occupancy_grid[cell_coords[1]+1, cell_coords[0]+1] = 100
+        # numpy_occupancy_grid[cell_coords[1]+1, cell_coords[0]] = 100
+        # numpy_occupancy_grid[cell_coords[1]+1, cell_coords[0]] = 100
+        # TODO: Look up a way to just add a hardcoded filter centered somewhere
+        # on a larger 2D numpy array. This is basically just the same question
+        # as "how do I draw a circle or a square centered at a point in an
+        # image" for opencv. This is not a hard problem.
     current_occupancy_grid.data = numpy_occupancy_grid.flatten().tolist()
     
     # plot_coords_on_occupancy_grid(cell_coordinates=cell_coords,
