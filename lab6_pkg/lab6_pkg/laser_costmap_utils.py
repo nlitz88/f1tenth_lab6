@@ -148,7 +148,7 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     # Iterate through the scan messages, compute the continuous position of each
     # of them.
     ranges_m = np.array(scan_message.ranges)
-    angles_rad = np.array([i*scan_message.angle_increment for i in range(len(ranges_m))])
+    angles_rad = np.array([i*scan_message.angle_increment + scan_message.angle_min for i in range(len(ranges_m))])
     points_x_m = np.cos(angles_rad)*ranges_m
     points_y_m = np.sin(angles_rad)*ranges_m
 
@@ -186,13 +186,19 @@ def laser_update_occupancy_grid_temp(scan_message: LaserScan,
     
     # Create a 2D numpy array to serve as an easier to work with, temporary
     # occupancy grid that we'll convert to our actual grid later.
-    numpy_occupancy_grid = np.zeros(shape=(current_occupancy_grid.info.width, current_occupancy_grid.info.height), dtype=np.int8)
+    numpy_occupancy_grid = np.zeros(shape=(current_occupancy_grid.info.height, current_occupancy_grid.info.width), dtype=np.int8)
 
     # TODO Could probably replace this for loop with a numpy operation to index
     # the 2D array using the x_cell_coords and y_cell_coords array.
     for cell_coords in filtered_cell_coords:
         # TODO: Add "splatting" here as a way to "inflate" observed obstacles.
-        numpy_occupancy_grid[cell_coords[0], cell_coords[1]] = 100
+        # NOTE: I'm wondering: numpy uses indexing [row, column]--but we know
+        # that when we flatten this, it's expecting that x values are referring
+        # to the column instead. I didn't think we'd have to worry about that
+        # here. Well, rather, remember how the theme has been that the x basis
+        # vector has effectively been acting like our width? (even though it's
+        # called height?). Maybe same idea applies here.
+        numpy_occupancy_grid[cell_coords[1], cell_coords[0]] = 100
 
     # Once all the LiDAR landing locations have been marked, can flatten this
     # array and assign it to the occupancy grid.
