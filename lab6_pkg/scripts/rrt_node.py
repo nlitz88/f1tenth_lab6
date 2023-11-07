@@ -155,7 +155,17 @@ class RRT(Node):
             self.get_logger().warning(f"Failed to project goal pose to costmap occupancy grid.\nException: {str(exc)}")
             return
 
-        3. Derive the vehicle's starting point in the costmap 
+        # 3. The vehicle's position in the vehicle frame is at (0,0). The
+        #    continuous to grid projection function we have accepts a point in
+        #    the same frame as the occupancy grid and projects it onto the grid.
+        #    Therefore, because we know the base link is at the origin of the
+        #    same frame, we can just pass that in and get where it must be in
+        #    the grid!
+        continous_starting_position = (0,0)
+
+        # 4. Then, project that starting pose into the costmap grid.
+        start_position = project_continuous_point_to_grid(occupancy_grid=costmap,
+                                                          continuous_point=continous_starting_position)
         
         # 3. Convert the occupancy grid's underlying data field to an easier to
         #    work with 2D numpy array.
@@ -164,8 +174,9 @@ class RRT(Node):
         # Basically, at this point, run the RRT algorithm given the costmap and
         # free space.
         try:
-            rrt(costmap=numpy_occupancy_grid,
-                start_point=)
+            # rrt(costmap=numpy_occupancy_grid,
+            #     start_point=)
+            pass
         except Exception as exc:
             self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
             return
@@ -179,15 +190,15 @@ class RRT(Node):
         # NOTE: As a quick test, let's take the transformed goal pose, get the
         # point inside, project it onto the occupancy 
         numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
-        
+        numpy_occupancy_grid[start_position[1], start_position[0]] = 100
         
         # 4. Randomly select a cell from the free space discovered in the
         #    occupancy grid.
-        sampled_cell = sample(costmap=numpy_occupancy_grid)
-        self.get_logger().info(f"Sampled cell: {sampled_cell}")
+        # sampled_cell = sample(costmap=numpy_occupancy_grid)
+        # self.get_logger().info(f"Sampled cell: {sampled_cell}")
         # TODO: Test sampled cell by publishing an updated costmap with this
         # cell Just to visualize.
-        numpy_occupancy_grid[sampled_cell[1], sampled_cell[0]] = 100
+        # numpy_occupancy_grid[sampled_cell[1], sampled_cell[0]] = 100
 
         costmap.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
         self.__temp_occ_publisher.publish(costmap)

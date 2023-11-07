@@ -1,5 +1,5 @@
 
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional
 import numpy as np
 
 from lab6_pkg.laser_costmap_utils import GridPosition
@@ -180,7 +180,7 @@ class TreeNode(object):
 # provided 2D array/costmap--but nothing else.
 def rrt(costmap: np.ndarray,
         start_point: GridPosition,
-        goal_point: GridPosition) -> list(GridPosition):
+        goal_point: GridPosition) -> List[GridPosition]:
     # Start point and goal point are both assumed to be within the bounds of the
     # provided costmap
 
@@ -190,6 +190,6 @@ def rrt(costmap: np.ndarray,
     # here, therefore, I think that should be one of this function's
     # "initialization" steps.
     free_space = free_space_from_costmap(costmap=costmap)
-    
+
     
     pass
