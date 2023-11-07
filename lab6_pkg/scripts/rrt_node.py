@@ -35,10 +35,12 @@ class RRT(Node):
                                 parameters=[
                                     ("path_frame", rclpy.Parameter.Type.STRING),
                                     ("goal_radius", 4),
+                                    ("new_point_distance", 3.0),
                                     ("max_rrt_iterations", 200)
                                 ])
         self.__path_frame = self.get_parameter("path_frame").value
         self.__goal_radius = self.get_parameter("goal_radius").value
+        self.__new_point_distance = self.get_parameter("new_point_distance").value
         self.__max_rrt_iterations = self.get_parameter("max_rrt_iterations").value
 
         # Create goal pose subscriber.
@@ -179,15 +181,16 @@ class RRT(Node):
         # free space.
         start_grid_position = GridPosition(x=start_position[0], y=start_position[1])
         goal_grid_position = GridPosition(x=goal_position[0], y=goal_position[1])
-        try:
-            rrt(costmap=numpy_occupancy_grid,
-                start_point=start_grid_position,
-                goal_point=goal_grid_position,
-                goal_radius=self.__goal_radius,
-                max_iterations=self.__max_rrt_iterations, logger=self.get_logger())
-        except Exception as exc:
-            self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
-            return
+        # try:
+        #     rrt(costmap=numpy_occupancy_grid,
+        #         start_point=start_grid_position,
+        #         goal_point=goal_grid_position,
+        #         goal_radius=self.__goal_radius,
+        #         max_iterations=self.__max_rrt_iterations,
+        #         logger=self.get_logger())
+        # except Exception as exc:
+        #     self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
+        #     return
 
         # For testing the collision function, pass in the goal point as the
         # sampled point, print out whether it finds a collision or not, and if
@@ -205,6 +208,15 @@ class RRT(Node):
         # point inside, project it onto the occupancy 
         numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
         numpy_occupancy_grid[start_position[1], start_position[0]] = 100
+
+        # Test steer function using goal point as sampled point and start point
+        # as nearest point.
+        new_point = steer(nearest_point=(start_position[0], start_position[1]),
+                          sampled_point=(goal_position[0], goal_position[1]),
+                          new_point_distance=self.__new_point_distance,
+                          logger=self.get_logger())
+        self.get_logger().info(f"New point: {new_point}")
+        numpy_occupancy_grid[new_point[1], new_point[0]] = 100
         
         # 4. Randomly select a cell from the free space discovered in the
         #    occupancy grid.

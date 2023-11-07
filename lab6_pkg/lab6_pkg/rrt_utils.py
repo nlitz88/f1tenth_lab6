@@ -186,7 +186,8 @@ def steer_and_check(nearest_point: Tuple[int, int],
 
 def steer(nearest_point: Tuple[int, int],
           sampled_point: Tuple[int, int],
-          new_point_distance: float) -> Tuple[int, int]:
+          new_point_distance: float,
+          logger) -> Tuple[int, int]:
     """Returns the grid coordinates of a new point at new_point_distance from
     the nearest_point in the direction of the line from nearest_point to
     sampled_point.
@@ -202,10 +203,12 @@ def steer(nearest_point: Tuple[int, int],
     # components of that vector first.
     x_comp = sampled_point[0] - nearest_point[0]
     y_comp = sampled_point[1] - nearest_point[1]
+    logger.info(f"Vector x: {x_comp}, y: {y_comp}")
     # Compute the angle using an arctangent function that takes into account
     # different the different quadrants that our point x_comp, y_comp could fall
     # into.
-    angle = np.arctan2(x_comp, y_comp)
+    angle = np.arctan2(y_comp, x_comp)
+    logger.info(f"Computed angle from x-axis: {angle} rad")
     # Compute the x and y component of the new point that is new_point_distance
     # from the starting point at the computed angle.
     x_new = int(nearest_point[0] + new_point_distance*np.cos(angle))
