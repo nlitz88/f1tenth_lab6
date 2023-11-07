@@ -1,73 +1,79 @@
 
 from typing import List, Tuple, Optional
 import numpy as np
+from collections import deque
 
 from lab6_pkg.laser_costmap_utils import GridPosition
 
-# This should be an application independent/agnostic tree adjacency list
-# implementation.
-class TreeNode:
-    """Class describing each node of the tree that we'll be constructing."""
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.children = []
-
-# Need to decide if I'm going to store the tree as an array or as more of a
-# linked list. Just have to remember: Every time we sample a new point, have to
-# iterate through all the nodes of the tree to figure out which is closest.
-# Which means, if we do the linked list style organization, that means we do a
-# BFS over the entire tree every time, making it O(V+E). So, it's not that bad,
-# but it is certainly not as nice as just doing a vectorized euclidean distance
-# or something like that.
-
-# Now, for the sake of simplicity and getting something working, I can always
-# just implement it as the linked list style, as that's probably faster to
-# implement. BUT, either way, I NEED to make some helper functions that abstract
-# away manipulating the tree 
-
-# What operations do I need functions for? 
-# Inserting a new node (I.e., for a new point in the RRT tree).
-
-# AND, Actually, I think I'm realizing that the tree we construct with RRT is
-# NOT actually a binary tree, but instead a general tree. I.e., each node can
-# have an abitrary number of children.
-
-# Therefore, if the above is true, we can't use the "tree as array"
-# implementation, as that only works if you have an n-ary tree, where you the
-# maximum number of children each node can have.
-
-# Therefore, I think a better representation of the graph would now be with an
-# adjacency list. Because it's a tree (and not a generalized graph), we *could*
-# use a parent point in each node object. That would prevent you from having to
-# traverse up the graph, but it could be good. However, this isn't robust to
-# nodes being removed. In our case, we really don't have to worry about that,
-# but it would be nice to do this the right way if it's not that much hard.
-
-# I think I can just implement a function to find the path from the end back to
-# the start or something.
-
-# NOTE that this would be much faster if implemented as a KD tree.
+# For now, just going to let the graph be represented solely with tree nodes.
+# class TreeNode:
+#     """Class describing each node of the tree that we'll be constructing."""
+#     def __init__(self):
+#         self.children = []
 
 class Tree:
-    """Tree implemented as an adjacency list."""
     def __init__(self):
-        self.__adjacency_list: List[TreeNode] = []
+        self.__node_adjacency_lists: List[List[int]] = []
+        self.__node_coordinates: List[Tuple[int,int]] = []
 
-    def add_edge(self, parent_index: int, child_index: int) -> None:
-        self.__adjacency_list[parent_index].children.append(child_index)
+    def __new_node(self, node_position: Tuple[int, int]) -> int:
+        """Creates a new entry in the tree adjacency list for the new node with
+        the provided position and returns its index. This index is what you'll
+        use to access either its value in the parallel arrays adjacency list
+        and/or node_coordinates.
+
+        Args:
+            node_position (Tuple[int, int]): The x,y position associated with
+            this new node.
+
+        Returns:
+            int: The index of the new node to access both the parallel arrays
+            that comprise the tree.
+        """
+        self.__node_adjacency_lists([])
+        self.__node_coordinates.append(node_position)
+        return len(self.__node_coordinates) - 1
     
-    def add_node(self, new_node: TreeNode) -> int:
-        self.__adjacency_list.append(new_node)
-        return len(self.__adjacency_list) - 1
-    
-    def find_node(self, node: TreeNode) -> int:
-        for node in self.__adjacency_list:
-            if 
-    
-    def backtrace(self, start_node: TreeNode, end_node: TreeNode) -> List[TreeNode]:
-        return []
-    
+    def __add_edge(self, parent_index: int, child_index: int) -> None:
+        """Adds the child node's index to the parent node's adjacency list.
+
+        Args:
+            parent_index (int): Index of the parent node in the tree's adjacency
+            list.
+            child_index (int): Index of the child node in the tree's adjaceny
+            list.
+        """
+        self.__node_adjacency_lists[parent_index].append(child_index)
+
+        pass
+
+    def add_node(self, parent_index: int, new_node_position: Tuple[int, int]) -> int:
+        """Creates a new node in the tree at the position specified as a child
+        of the parent node specified.
+
+        Args:
+            parent_index (int): Index of the parent node in the tree's adjacency
+            list.
+            new_node_position (Tuple[int, int]): The x,y position associated
+            with the new node.
+
+        Returns:
+            int: The index of the new node to access both the parallel arrays
+            that comprise the tree.
+        """
+        new_node_index = self.__new_node(node_position=new_node_position)
+        self.__add_edge(parent_index=parent_index, child_index=new_node_index)
+        return new_node_index
+
+    def get_node_coordinates(self) -> np.ndarray:
+        """A convenience function to return the internal node coordinates list
+        as a 2D numpy array.
+
+        Returns:
+            np.ndarray: The 2D numpy array where each row is a different node's
+            x,y coordinate position.
+        """
+        return np.array(self.__node_coordinates)
 
 def free_space_from_costmap(costmap: np.ndarray,
                             occupied_threshold: Optional[int] = 100) -> np.ndarray:
@@ -113,18 +119,28 @@ def sample(free_space: np.ndarray) -> Tuple[int, int]:
     # 3. Return the coordinates at that index.
     return tuple(free_space[random_index])
 
-def nearest(tree_head: TreeNode, sampled_point):
-    """
-    This method should return the nearest node on the tree to the sampled point
+def nearest(root: TreeNode, sampled_point: Tuple[int, int]) -> TreeNode:
+    
 
-    Args:
-        tree ([]): the current RRT tree
-        sampled_point (tuple of (float, float)): point sampled in free space
-    Returns:
-        nearest_node (int): index of neareset node on the tree
-    """
+    
     nearest_node = 0
     return nearest_node
+
+def nearest_coords(node_coordinates: np.ndarray, sampled_point: np.ndarray) -> int:
+    """Returns the index of the node in the node_coordinates array with the
+    smallest euclidean distance.
+
+    Args:
+        node_coordinates (np.ndarray): 2D array where each row is a different
+        node's x,y coordinates.
+        sampled_point (np.ndarray): The x,y coordinates of the sampled point in
+        the grid.
+
+    Returns:
+        int: The index of the node in node_coordinates with the smallest
+        euclidean distance to the sampled_point.
+    """
+    return np.argmin(np.linalg.norm(node_coordinates-sampled_point))
 
 def steer(self, nearest_node, sampled_point):
     """
@@ -264,6 +280,8 @@ def rrt(costmap: np.ndarray,
         
         # Randomly sample a point in free space.
         sampled_point = sample(free_space=free_space)
+
+        # Get a list of all 
 
         # Find the point in the tree that is closest to the sampled point.
         nearest(tree="asdf", sampled_point=sampled_point)
