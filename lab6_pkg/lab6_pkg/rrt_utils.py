@@ -7,7 +7,7 @@ from lab6_pkg.laser_costmap_utils import GridPosition
 # This should be an application independent/agnostic tree adjacency list
 # implementation.
 class TreeNode:
-    """Class describing each node of the RRT tree that we'll be constructing."""
+    """Class describing each node of the tree that we'll be constructing."""
     def __init__(self):
         self.x = None
         self.y = None
@@ -47,9 +47,26 @@ class TreeNode:
 # I think I can just implement a function to find the path from the end back to
 # the start or something.
 
+# NOTE that this would be much faster if implemented as a KD tree.
+
 class Tree:
+    """Tree implemented as an adjacency list."""
     def __init__(self):
-        self.__adjacency_list = []
+        self.__adjacency_list: List[TreeNode] = []
+
+    def add_edge(self, parent_index: int, child_index: int) -> None:
+        self.__adjacency_list[parent_index].children.append(child_index)
+    
+    def add_node(self, new_node: TreeNode) -> int:
+        self.__adjacency_list.append(new_node)
+        return len(self.__adjacency_list) - 1
+    
+    def find_node(self, node: TreeNode) -> int:
+        for node in self.__adjacency_list:
+            if 
+    
+    def backtrace(self, start_node: TreeNode, end_node: TreeNode) -> List[TreeNode]:
+        return []
     
 
 def free_space_from_costmap(costmap: np.ndarray,
