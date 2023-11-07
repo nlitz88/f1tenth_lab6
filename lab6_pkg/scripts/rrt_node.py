@@ -153,7 +153,7 @@ class RRT(Node):
         # goal_grid_coords = project_continous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
         #                                                    continous_point=)
         continuous_goal_position = (transformed_goal_pose.pose.position.x, transformed_goal_pose.pose.position.y)
-        goal_position = project_continuous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
+        goal_position = project_continuous_point_to_grid(occupancy_grid=costmap,
                                                          continuous_point=continuous_goal_position)
 
         # 3. Convert the occupancy grid's underlying data field to an easier to
