@@ -27,4 +27,4 @@ laser_costmap:
 
 rrt:
   ros__parameters:
-    
+    path_frame: "map"

@@ -65,7 +65,6 @@ class LaserCostmap(Node):
     def __laserscan_callback(self, laserscan_msg: LaserScan) -> None:
 
         try:
-            self.get_logger().info("Received new laser scan!")
             # For now, just create a brand new occupancy grid and pass it into the
             # utils function to see what happens. need to set origin of that grid.
             new_grid = OccupancyGrid()

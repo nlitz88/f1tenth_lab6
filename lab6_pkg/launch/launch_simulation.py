@@ -54,7 +54,7 @@ def generate_launch_description():
     ld.add_action(path_file_publisher_node)
     # ld.add_action(pure_pursuit_node)
     ld.add_action(laser_costmap_node)
-    # ld.add_action(rrt_node)
+    ld.add_action(rrt_node)
 
     # Return the newly created launch description.
     return ld
