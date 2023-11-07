@@ -17,8 +17,12 @@ from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from nav_msgs.msg import OccupancyGrid
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+import tf2_geometry_msgs
 
 from lab6_pkg.rrt_utils import *
+from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid
 
 # TODO: import as you need
 
@@ -43,16 +47,16 @@ class RRT(Node):
                                 ])
         self.__path_frame = self.get_parameter("path_frame").value
 
-        # Create goal point subscriber.
-        self.__goal_point_subscriber = self.create_subscription(msg_type=Point,
-                                                                topic="goal_point",
-                                                                callback=self.__goal_point_callback,
+        # Create goal pose subscriber.
+        self.__goal_pose_subscriber = self.create_subscription(msg_type=PointStamped,
+                                                                topic="goal",
+                                                                callback=self.__goal_pose_callback,
                                                                 qos_profile=10)
-        # Variable to store latest copy of received goal point. NOTE that I
+        # Variable to store latest copy of received goal pose. NOTE that I
         # don't think you need a lock here, as we're not asynchronously updating
         # this value from multiple threads in this node (at least I don't
         # think).
-        self.__goal_point: Point = None
+        self.__goal_pose: PointStamped = None
 
         # Create subscriber for the vehicle's pose. This will serve as the
         # starting point for RRT. I.e., where the path will be planned from.
@@ -68,14 +72,18 @@ class RRT(Node):
                                                                    qos_profile=10)
         self.__costmap: OccupancyGrid = None
 
-    def __goal_point_callback(self, goal_point: Point) -> None:
-        """Callback function for storing the most recently received goal point
+        # Set up a transform listener and buffer for this node.
+        self.__transform_buffer = Buffer()
+        self.__transform_listener = TransformListener(buffer=self.__transform_buffer, node=self)
+
+    def __goal_pose_callback(self, goal_pose: Point) -> None:
+        """Callback function for storing the most recently received goal pose
         that RRT will plan a path to.
 
         Args:
-            goal_point (Point): (x,y) position that RRT will plan a path to.
+            goal_pose (Point): (x,y) position that RRT will plan a path to.
         """
-        self.__goal_point = goal_point
+        self.__goal_pose = goal_pose
         return
     
     def __pose_callback(self, pose: PoseStamped) -> None:
@@ -94,8 +102,8 @@ class RRT(Node):
         return
 
     def __costmap_callback(self, costmap: OccupancyGrid) -> None:
-        """Plans a path to the latest goal point using RRT in the received
-        costmap. It will transform the published goal point into the frame of
+        """Plans a path to the latest goal pose using RRT in the received
+        costmap. It will transform the published goal pose into the frame of
         the received costmap, plan a path in the received costmap to the goal
         point using RRT, and then publish a resulting Path in the costmap's
         frame or the frame specified by the path_frame parameter. It'd probably
@@ -109,10 +117,42 @@ class RRT(Node):
         # Store local copy of costmap.
         self.__costmap = costmap
 
+        # TODO
         # While this IS the function where we "run rrt," I don't want this to be
         # the function where all of its parts are integrated and put together.
         # That should be in a separate RRT algorithm function. If it has to be,
-        # fine, but that's not ideal.
+        # fine, but that's not ideal. For now, I'll build it in here, but I can
+        # always "integrate" (or bring together) all the steps in a separate
+        # function later.
+
+        # 1. Attempt transform the most recently received goal pose to the
+        #    frame of the received costmap. Bail if not possible or if there
+        #    hasn't been a received goal pose yet.
+        try:
+            # Check if we've received a goal pose.
+            if self.__goal_pose is None:
+                raise Exception("No goal pose set! Don't have a goal to plan a path to!")
+            # If so, get the transform from the goal poses frame to the frame
+            # the occupancy grid is in.
+            goal_to_grid_transform = self.__transform_buffer.lookup_transform(source_frame=self.__goal_pose.header.frame_id,
+                                                                              target_frame=self.__costmap.header.frame_id)
+            transformed_goal_pose = tf2_geometry_msgs.do_transform_pose(pose=self.__goal_pose,
+                                                                        transform=goal_to_grid_transform)
+        except Exception as exc:
+            self.get_logger().error(f"Failed to transform goal pose to costmap's frame.\nException: {str(exc)}")
+
+        # 2. Convert the occupancy grid's underlying data field to an easier to
+        #    work with 2D numpy array.
+        numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
+        
+        
+
+        # 2. Randomly select a cell from the free space discovered in the
+        #    occupancy grid.
+        sampled_cell = sample(costmap=numpy_occupancy_grid)
+
+        # 
+
 
 def main(args=None):
     rclpy.init(args=args)
