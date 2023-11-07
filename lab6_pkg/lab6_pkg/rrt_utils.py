@@ -31,7 +31,7 @@ def sample(costmap: np.ndarray,
     # 2. Choose a random number between 0 and the length of the free coordinates
     #    list. Use a uniform distribution, giving equal probability of picking
     #    all points in free space.
-    random_index = np.random.uniform(low=0, high=free_coords.shape[0])
+    random_index = np.random.randint(low=0, high=free_coords.shape[0])
     # 3. Return the coordinates at that index.
     return tuple(free_coords[random_index])
 
