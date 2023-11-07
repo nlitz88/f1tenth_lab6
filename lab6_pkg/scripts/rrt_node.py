@@ -175,14 +175,18 @@ class RRT(Node):
         # NOTE: As a quick test, let's take the transformed goal pose, get the
         # point inside, project it onto the occupancy 
         numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
-        costmap.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
-        self.__temp_occ_publisher.publish(costmap)
-
-        # 2. Randomly select a cell from the free space discovered in the
+        
+        
+        # 4. Randomly select a cell from the free space discovered in the
         #    occupancy grid.
         sampled_cell = sample(costmap=numpy_occupancy_grid)
+        self.get_logger().info(f"Sampled cell: {sampled_cell}")
         # TODO: Test sampled cell by publishing an updated costmap with this
         # cell Just to visualize.
+        numpy_occupancy_grid[sampled_cell[1], sampled_cell[0]] = 100
+
+        costmap.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
+        self.__temp_occ_publisher.publish(costmap)
 
 
 def main(args=None):

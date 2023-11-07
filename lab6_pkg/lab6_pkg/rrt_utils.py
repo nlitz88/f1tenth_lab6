@@ -24,8 +24,8 @@ def sample(costmap: np.ndarray,
     # 1. Use np.where to get the x and y coordinates of the locations where the
     #    cost is less than the cost threshold. Take the transpose to get an
     #    array of [x,y] arrays, rather than two separate, parallel x and y index
-    #    arrays.
-    free_coords = np.transpose(np.where(costmap < occupied_threshold))
+    #    arrays. Have to flip so that x coords (columns) are on top.
+    free_coords = np.transpose(np.flip(np.where(costmap < occupied_threshold)))
     if free_coords.shape[0] == 0:
         raise Exception("No free spaces found to sample from in costmap.")
     # 2. Choose a random number between 0 and the length of the free coordinates
