@@ -167,7 +167,7 @@ class RRT(Node):
         start_position = project_continuous_point_to_grid(occupancy_grid=costmap,
                                                           continuous_point=continous_starting_position)
         
-        # 3. Convert the occupancy grid's underlying data field to an easier to
+        # 5. Convert the occupancy grid's underlying data field to an easier to
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
 

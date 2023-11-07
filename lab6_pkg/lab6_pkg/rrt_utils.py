@@ -4,6 +4,54 @@ import numpy as np
 
 from lab6_pkg.laser_costmap_utils import GridPosition
 
+# This should be an application independent/agnostic tree adjacency list
+# implementation.
+class TreeNode:
+    """Class describing each node of the RRT tree that we'll be constructing."""
+    def __init__(self):
+        self.x = None
+        self.y = None
+        self.children = []
+
+# Need to decide if I'm going to store the tree as an array or as more of a
+# linked list. Just have to remember: Every time we sample a new point, have to
+# iterate through all the nodes of the tree to figure out which is closest.
+# Which means, if we do the linked list style organization, that means we do a
+# BFS over the entire tree every time, making it O(V+E). So, it's not that bad,
+# but it is certainly not as nice as just doing a vectorized euclidean distance
+# or something like that.
+
+# Now, for the sake of simplicity and getting something working, I can always
+# just implement it as the linked list style, as that's probably faster to
+# implement. BUT, either way, I NEED to make some helper functions that abstract
+# away manipulating the tree 
+
+# What operations do I need functions for? 
+# Inserting a new node (I.e., for a new point in the RRT tree).
+
+# AND, Actually, I think I'm realizing that the tree we construct with RRT is
+# NOT actually a binary tree, but instead a general tree. I.e., each node can
+# have an abitrary number of children.
+
+# Therefore, if the above is true, we can't use the "tree as array"
+# implementation, as that only works if you have an n-ary tree, where you the
+# maximum number of children each node can have.
+
+# Therefore, I think a better representation of the graph would now be with an
+# adjacency list. Because it's a tree (and not a generalized graph), we *could*
+# use a parent point in each node object. That would prevent you from having to
+# traverse up the graph, but it could be good. However, this isn't robust to
+# nodes being removed. In our case, we really don't have to worry about that,
+# but it would be nice to do this the right way if it's not that much hard.
+
+# I think I can just implement a function to find the path from the end back to
+# the start or something.
+
+class Tree:
+    def __init__(self):
+        self.__adjacency_list = []
+    
+
 def free_space_from_costmap(costmap: np.ndarray,
                             occupied_threshold: Optional[int] = 100) -> np.ndarray:
     """Returns a 2D array (which could really be interpretted as a list of
@@ -48,7 +96,7 @@ def sample(free_space: np.ndarray) -> Tuple[int, int]:
     # 3. Return the coordinates at that index.
     return tuple(free_space[random_index])
 
-def nearest(self, tree, sampled_point):
+def nearest(tree_head: TreeNode, sampled_point):
     """
     This method should return the nearest node on the tree to the sampled point
 
@@ -158,14 +206,7 @@ def near(self, tree, node):
     neighborhood = []
     return neighborhood
 
-# class def for tree nodes
-# It's up to you if you want to use this
-class TreeNode(object):
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.parent = None
-        self.is_root = False
+
 
 # NOT SURE YET if this function specifically should return that Path object, or
 # if it just should be a raw array of waypoints along the path--and then a
@@ -180,9 +221,14 @@ class TreeNode(object):
 # provided 2D array/costmap--but nothing else.
 def rrt(costmap: np.ndarray,
         start_point: GridPosition,
-        goal_point: GridPosition) -> List[GridPosition]:
+        goal_point: GridPosition,
+        goal_radius: int,
+        max_iterations: int) -> List[GridPosition]:
     # Start point and goal point are both assumed to be within the bounds of the
     # provided costmap
+
+
+    # INITITIALIZATION STEPS
 
     # I also think that this function should be the one responsible for
     # extracting that free space array from the costmap internally, as its not
@@ -191,5 +237,18 @@ def rrt(costmap: np.ndarray,
     # "initialization" steps.
     free_space = free_space_from_costmap(costmap=costmap)
 
+
+    # RRT LOOP STEPS
+    # Loop for a finite number of times or until a path has been found to the
+    # goal region.
+    path_found = False
+    iteration_count = 0
+    while iteration_count < max_iterations and not path_found:
+        
+        # Randomly sample a point in free space.
+        sampled_point = sample(free_space=free_space)
+
+        # Find the point in the tree that is closest to the sampled point.
+        nearest(tree="asdf", sampled_point=sampled_point)
     
     pass
