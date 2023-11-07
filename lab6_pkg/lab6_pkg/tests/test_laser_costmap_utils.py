@@ -32,5 +32,28 @@ class TestPositionFromRange(unittest.TestCase):
         self.assertAlmostEqual(result.x, -0.70710678118, places=5)  # Expected x value
         self.assertAlmostEqual(result.y, 0.70710678118, places=5)  # Expected y value
 
+
+class TestProjectContinuousPointToGrid(unittest.TestCase):
+    def test_projection_grid_resolution_1(self):
+        # Test when grid resolution is 1 cell per meter
+        grid_resolution_m_c = 1.0
+        continuous_point = (5.0, 3.0)
+        result = project_continuous_point_to_grid(grid_resolution_m_c, continuous_point)
+        self.assertEqual(result, (5, 3))
+
+    def test_projection_grid_resolution_0_5(self):
+        # Test when grid resolution is 0.5 cells per meter
+        grid_resolution_m_c = 0.5
+        continuous_point = (3.0, 2.0)
+        result = project_continuous_point_to_grid(grid_resolution_m_c, continuous_point)
+        self.assertEqual(result, (6, 4))
+
+    def test_projection_grid_resolution_2(self):
+        # Test when grid resolution is 2 cells per meter
+        grid_resolution_m_c = 2.0
+        continuous_point = (1.5, 1.5)
+        result = project_continuous_point_to_grid(grid_resolution_m_c, continuous_point)
+        self.assertEqual(result, (0, 0))
+
 if __name__ == "__main__":
     unittest.main()

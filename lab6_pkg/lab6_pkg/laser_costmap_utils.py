@@ -72,23 +72,46 @@ class GridPosition:
     x: int = 0
     y: int = 0
 
-def project_continous_point_to_grid(grid_resolution_m_c: float, 
-                                    continous_point: ContinuousPosition) -> GridPosition:
-    """Takes a continous 2D position in a frame and converts it to coordinates
+# def project_continous_point_to_grid(grid_resolution_m_c: float, 
+#                                     continous_point: ContinuousPosition) -> GridPosition:
+#     """Takes a continous 2D position in a frame and converts it to coordinates
+#     in a 2D grid, where there is no transformation (translation or rotation)
+#     from the source frame to the grid's frame.
+
+#     Args:
+#         grid_resolution_m_c (float): The number of cells per meter in the grid
+#         you're projecting the continous point into.
+#         continous_point (ContinuousPosition): Continous position (in meters) of a
+#         point in an arbitrary frame.
+
+#     Returns:
+#         GridPosition: The position of the continuous point projected into the
+#         grid. The coordinates with respect to a grid whose 
+#     """
+#     pass
+
+def project_continuous_point_to_grid(grid_resolution_m_c: float, 
+                                           continuous_point: Tuple[float, float]) -> Tuple[int, int]:
+    """Takes a continuous 2D position in a frame and converts it to coordinates
     in a 2D grid, where there is no transformation (translation or rotation)
     from the source frame to the grid's frame.
 
     Args:
         grid_resolution_m_c (float): The number of cells per meter in the grid
-        you're projecting the continous point into.
-        continous_point (ContinuousPosition): Continous position (in meters) of a
-        point in an arbitrary frame.
+        you're projecting the continuous point into.
+        continuous_point (Tuple[float, float]): Tuple containing the (x,y)
+        coordinates (in meters) describing the position of a point WITH RESPECT
+        TO THE POSITION OF THE ORIGIN OF THE GRID you're projecting into. If you
+        haven't already transformed the point to be "from the perspective of the
+        occupancy grid's origin," then this projection won't make sense.
 
     Returns:
-        GridPosition: The position of the continuous point projected into the
-        grid. The coordinates with respect to a grid whose 
+        Tuple[int, int]: The x,y coordinates as grid-cell coordinates, or cell
+        offsets from the grid's origin.
     """
-    pass
+    return tuple(np.array((1.0/grid_resolution_m_c)*np.array(continuous_point), dtype=np.int32).tolist())
+    
+
 
 # Okay, so, I have the sequence of steps that'll be needed to build up an
 # occupancy grid from laser scans. However, now, I want to think not just about

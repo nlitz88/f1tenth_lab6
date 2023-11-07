@@ -22,7 +22,7 @@ from tf2_ros.transform_listener import TransformListener
 import tf2_geometry_msgs
 
 from lab6_pkg.rrt_utils import *
-from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid
+from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid, project_continuous_point_to_grid
 
 # TODO: import as you need
 
@@ -140,6 +140,16 @@ class RRT(Node):
                                                                         transform=goal_to_grid_transform)
         except Exception as exc:
             self.get_logger().error(f"Failed to transform goal pose to costmap's frame.\nException: {str(exc)}")
+
+        # 2. Project the transformed goal pose's position onto the costmap.
+        # goal_grid_coords = project_continous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
+        #                                                    continous_point=)
+        continuous_goal_position = (transformed_goal_pose.position.x, transformed_goal_pose.position.y)
+        goal_position = project_continuous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
+                                                         continuous_point=continuous_goal_position)
+
+        # NOTE: As a quick test, let's take the transformed goal pose, get the
+        # point inside, project it onto the occupancy 
 
         # 2. Convert the occupancy grid's underlying data field to an easier to
         #    work with 2D numpy array.
