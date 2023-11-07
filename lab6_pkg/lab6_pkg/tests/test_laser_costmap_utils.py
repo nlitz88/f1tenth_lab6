@@ -34,26 +34,35 @@ class TestPositionFromRange(unittest.TestCase):
 
 
 class TestProjectContinuousPointToGrid(unittest.TestCase):
-    def test_projection_grid_resolution_1(self):
-        # Test when grid resolution is 1 cell per meter
-        grid_resolution_m_c = 1.0
-        continuous_point = (5.0, 3.0)
-        result = project_continuous_point_to_grid(grid_resolution_m_c, continuous_point)
-        self.assertEqual(result, (5, 3))
-
-    def test_projection_grid_resolution_0_5(self):
-        # Test when grid resolution is 0.5 cells per meter
-        grid_resolution_m_c = 0.5
-        continuous_point = (3.0, 2.0)
-        result = project_continuous_point_to_grid(grid_resolution_m_c, continuous_point)
-        self.assertEqual(result, (6, 4))
-
-    def test_projection_grid_resolution_2(self):
-        # Test when grid resolution is 2 cells per meter
-        grid_resolution_m_c = 2.0
-        continuous_point = (1.5, 1.5)
-        result = project_continuous_point_to_grid(grid_resolution_m_c, continuous_point)
+    def test_point_at_origin(self):
+        # Test for a point at the origin (0, 0)
+        occupancy_grid = OccupancyGrid()
+        occupancy_grid.info.resolution = 0.1
+        occupancy_grid.info.origin.position.x = 0.0
+        occupancy_grid.info.origin.position.y = 0.0
+        continuous_point = (0.0, 0.0)
+        result = project_continuous_point_to_grid(occupancy_grid, continuous_point)
         self.assertEqual(result, (0, 0))
+
+    def test_point_at_non_origin_position(self):
+        # Test for a point at a non-origin position
+        occupancy_grid = OccupancyGrid()
+        occupancy_grid.info.resolution = 0.1
+        occupancy_grid.info.origin.position.x = 0.0
+        occupancy_grid.info.origin.position.y = 0.0
+        continuous_point = (0.5, 0.5)
+        result = project_continuous_point_to_grid(occupancy_grid, continuous_point)
+        self.assertEqual(result, (5, 5))  # 0.5 / 0.1 = 5
+
+    def test_point_with_different_resolution_and_origin(self):
+        # Test for a point with a different resolution and origin
+        occupancy_grid = OccupancyGrid()
+        occupancy_grid.info.resolution = 0.2
+        occupancy_grid.info.origin.position.x = 1.0
+        occupancy_grid.info.origin.position.y = 1.0
+        continuous_point = (2.5, 2.5)
+        result = project_continuous_point_to_grid(occupancy_grid, continuous_point)
+        self.assertEqual(result, (7, 7))  # (2.5 - 1.0) / 0.2 = 7
 
 if __name__ == "__main__":
     unittest.main()

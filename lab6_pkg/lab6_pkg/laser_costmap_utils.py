@@ -90,29 +90,30 @@ class GridPosition:
 #     """
 #     pass
 
-def project_continuous_point_to_grid(grid_resolution_m_c: float, 
-                                           continuous_point: Tuple[float, float]) -> Tuple[int, int]:
-    """Takes a continuous 2D position in a frame and converts it to coordinates
-    in a 2D grid, where there is no transformation (translation or rotation)
-    from the source frame to the grid's frame.
+def project_continuous_point_to_grid(occupancy_grid: OccupancyGrid,
+                                     continuous_point: Tuple[float, float]) -> Tuple[int, int]:
+    """Takes a continuous 2D position in the same frame as an occupancy grid and
+    projects it onto a cell in the occupancy grid.
 
     Args:
-        grid_resolution_m_c (float): The number of cells per meter in the grid
-        you're projecting the continuous point into.
-        continuous_point (Tuple[float, float]): Tuple containing the (x,y)
-        coordinates (in meters) describing the position of a point WITH RESPECT
-        TO THE POSITION OF THE ORIGIN OF THE GRID you're projecting into. If you
-        haven't already transformed the point to be "from the perspective of the
-        occupancy grid's origin," then this projection won't make sense.
+        occupancy_grid (OccupancyGrid): Occupancy grid that the position should
+        be projected into.
+        continuous_point (Tuple[float, float]): The point as expressed in terms
+        of the parent frame of the provided occupancy grid.
 
     Returns:
         Tuple[int, int]: The x,y coordinates as grid-cell coordinates, or cell
         offsets from the grid's origin.
     """
-    return tuple(np.array((1.0/grid_resolution_m_c)*np.array(continuous_point), dtype=np.int32).tolist())
+    # First, offset the point by the occupancy grid's origin position in its
+    # parent frame.
+    offset_point_x = continuous_point[0] - occupancy_grid.info.origin.position.x
+    offset_point_y = continuous_point[1] - occupancy_grid.info.origin.position.y
+    resolution_c_m = 1.0/occupancy_grid.info.resolution
+    point_cell_x = int(offset_point_x*resolution_c_m)
+    point_cell_y = int(offset_point_y*resolution_c_m)
+    return (point_cell_x, point_cell_y)
     
-
-
 # Okay, so, I have the sequence of steps that'll be needed to build up an
 # occupancy grid from laser scans. However, now, I want to think not just about
 # the sequence of events (roughly), but now about the architecture. I.e., what
