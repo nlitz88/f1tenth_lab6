@@ -8,9 +8,16 @@ from lab6_pkg.laser_costmap_utils import GridPosition
 class Tree:
     """Tree implementation based on parallel arrays and adjacency lists.
     """
-    def __init__(self):
+    def __init__(self, root_position: Tuple[int, int]):
+        # Initialize the parallel adjacency lists and node_coordinates lists.
         self.__node_adjacency_lists: List[List[int]] = []
         self.__node_coordinates: List[Tuple[int,int]] = []
+        # Add the root node to the tree.
+        self.__node_adjacency_lists.append([])
+        self.__node_coordinates.append(root_position)
+        # Because this is the root node of the tree, the root isn't a child of
+        # any other nodes. Therefore, we don't add it to any other node's
+        # adjacency list.
 
     def __new_node(self, node_position: Tuple[int, int]) -> int:
         """Creates a new entry in the tree adjacency list for the new node with
@@ -40,8 +47,7 @@ class Tree:
             list.
         """
         self.__node_adjacency_lists[parent_index].append(child_index)
-
-        pass
+        return
 
     def add_node(self, parent_index: int, new_node_position: Tuple[int, int]) -> int:
         """Creates a new node in the tree at the position specified as a child
@@ -61,7 +67,19 @@ class Tree:
         self.__add_edge(parent_index=parent_index, child_index=new_node_index)
         return new_node_index
 
-    def get_node_coordinates(self) -> np.ndarray:
+    def get_node_coordinates(self, node_index: int) -> Tuple[int, int]:
+        """Returns the coordinates of the single node with the provided
+        node_index.
+
+        Args:
+            node_index (int): The index of the node in the tree.
+
+        Returns:
+            Tuple[int, int]: The x,y coordinate grid position of the node.
+        """
+        return self.__node_coordinates[node_index]
+
+    def get_node_coordinates_array(self) -> np.ndarray:
         """A convenience function to return the internal node coordinates list
         as a 2D numpy array.
 
@@ -144,12 +162,10 @@ def nearest(tree: Tree, sampled_point: Tuple[int, int]) -> int:
         int: The index of the node whose grid position is closest to the sampled
         point.
     """
-    node_coordinates = tree.get_node_coordinates()
+    node_coordinates = tree.get_node_coordinates_array()
     nearest_node_index = nearest_coord(node_coordinates=node_coordinates,
                                        sampled_point=sampled_point)
     return nearest_node_index
-
-
 
 def steer(self, nearest_node, sampled_point):
     """
@@ -265,12 +281,13 @@ def rrt(costmap: np.ndarray,
         start_point: GridPosition,
         goal_point: GridPosition,
         goal_radius: int,
-        max_iterations: int) -> List[GridPosition]:
+        max_iterations: int,
+        logger) -> List[GridPosition]:
     # Start point and goal point are both assumed to be within the bounds of the
     # provided costmap
 
-
     # INITITIALIZATION STEPS
+    rrt_tree = Tree(root_position=(start_point.x, start_point.y))
 
     # I also think that this function should be the one responsible for
     # extracting that free space array from the costmap internally, as its not
@@ -278,7 +295,6 @@ def rrt(costmap: np.ndarray,
     # here, therefore, I think that should be one of this function's
     # "initialization" steps.
     free_space = free_space_from_costmap(costmap=costmap)
-
 
     # RRT LOOP STEPS
     # Loop for a finite number of times or until a path has been found to the
@@ -289,10 +305,9 @@ def rrt(costmap: np.ndarray,
         
         # Randomly sample a point in free space.
         sampled_point = sample(free_space=free_space)
-
-        # Get a list of all 
-
         # Find the point in the tree that is closest to the sampled point.
-        nearest(tree="asdf", sampled_point=sampled_point)
-    
-    pass
+        nearest_node_to_sample = nearest(tree=rrt_tree, sampled_point=sampled_point)
+        logger.info(f"Nearest point: {(rrt_tree.get_node_coordinates(node_index=nearest_node_to_sample))}")
+        path_found = True
+
+    return []

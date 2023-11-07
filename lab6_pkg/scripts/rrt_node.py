@@ -33,9 +33,13 @@ class RRT(Node):
         # Set up / declare node parameters.
         self.declare_parameters(namespace="",
                                 parameters=[
-                                    ("path_frame", rclpy.Parameter.Type.STRING)
+                                    ("path_frame", rclpy.Parameter.Type.STRING),
+                                    ("goal_radius", 4),
+                                    ("max_rrt_iterations", 200)
                                 ])
         self.__path_frame = self.get_parameter("path_frame").value
+        self.__goal_radius = self.get_parameter("goal_radius").value
+        self.__max_rrt_iterations = self.get_parameter("max_rrt_iterations").value
 
         # Create goal pose subscriber.
         self.__goal_pose_subscriber = self.create_subscription(msg_type=PoseStamped,
@@ -173,10 +177,14 @@ class RRT(Node):
 
         # Basically, at this point, run the RRT algorithm given the costmap and
         # free space.
+        start_grid_position = GridPosition(x=start_position[0], y=start_position[1])
+        goal_grid_position = GridPosition(x=goal_position[0], y=goal_position[1])
         try:
-            # rrt(costmap=numpy_occupancy_grid,
-            #     start_point=)
-            pass
+            rrt(costmap=numpy_occupancy_grid,
+                start_point=start_grid_position,
+                goal_point=goal_grid_position,
+                goal_radius=self.__goal_radius,
+                max_iterations=self.__max_rrt_iterations, logger=self.get_logger())
         except Exception as exc:
             self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
             return

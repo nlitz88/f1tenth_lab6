@@ -28,3 +28,5 @@ laser_costmap:
 rrt:
   ros__parameters:
     path_frame: "map"
+    goal_radius: 4
+    max_rrt_iterations: 200
