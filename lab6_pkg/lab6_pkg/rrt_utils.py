@@ -5,13 +5,9 @@ from collections import deque
 
 from lab6_pkg.laser_costmap_utils import GridPosition
 
-# For now, just going to let the graph be represented solely with tree nodes.
-# class TreeNode:
-#     """Class describing each node of the tree that we'll be constructing."""
-#     def __init__(self):
-#         self.children = []
-
 class Tree:
+    """Tree implementation based on parallel arrays and adjacency lists.
+    """
     def __init__(self):
         self.__node_adjacency_lists: List[List[int]] = []
         self.__node_coordinates: List[Tuple[int,int]] = []
@@ -119,14 +115,7 @@ def sample(free_space: np.ndarray) -> Tuple[int, int]:
     # 3. Return the coordinates at that index.
     return tuple(free_space[random_index])
 
-def nearest(root: TreeNode, sampled_point: Tuple[int, int]) -> TreeNode:
-    
-
-    
-    nearest_node = 0
-    return nearest_node
-
-def nearest_coords(node_coordinates: np.ndarray, sampled_point: np.ndarray) -> int:
+def nearest_coord(node_coordinates: np.ndarray, sampled_point: np.ndarray) -> int:
     """Returns the index of the node in the node_coordinates array with the
     smallest euclidean distance.
 
@@ -141,6 +130,26 @@ def nearest_coords(node_coordinates: np.ndarray, sampled_point: np.ndarray) -> i
         euclidean distance to the sampled_point.
     """
     return np.argmin(np.linalg.norm(node_coordinates-sampled_point))
+
+def nearest(tree: Tree, sampled_point: Tuple[int, int]) -> int:
+    """Returns the index of the node in the provided tree whose grid position is
+    nearest to the provided sampled point.
+
+    Args:
+        tree (Tree): Tree of grid positions.
+        sampled_point (Tuple[int, int]): The grid coordinates of the sampled
+        point.
+
+    Returns:
+        int: The index of the node whose grid position is closest to the sampled
+        point.
+    """
+    node_coordinates = tree.get_node_coordinates()
+    nearest_node_index = nearest_coord(node_coordinates=node_coordinates,
+                                       sampled_point=sampled_point)
+    return nearest_node_index
+
+
 
 def steer(self, nearest_node, sampled_point):
     """
