@@ -25,17 +25,6 @@ import tf2_geometry_msgs
 from lab6_pkg.rrt_utils import *
 from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid, project_continuous_point_to_grid, occupancy_grid_from_twod_numpy
 
-# TODO: import as you need
-
-# class def for tree nodes
-# It's up to you if you want to use this
-class TreeNode(object):
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.parent = None
-        self.is_root = False
-
 # class def for RRT
 class RRT(Node):
     def __init__(self):
@@ -158,22 +147,29 @@ class RRT(Node):
         #    is in bounds of the occupancy grid. In the future, could use
         #    something like the steer function or Bresenham line function to
         #    get the closest point that IS in free space.
-        # goal_grid_coords = project_continous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
-        #                                                    continous_point=)
         continuous_goal_position = (transformed_goal_pose.pose.position.x, transformed_goal_pose.pose.position.y)
         try:
             goal_position = project_continuous_point_to_grid(occupancy_grid=costmap,
-                                                            continuous_point=continuous_goal_position)
+                                                             continuous_point=continuous_goal_position)
         except Exception as exc:
             self.get_logger().warning(f"Failed to project goal pose to costmap occupancy grid.\nException: {str(exc)}")
             return
+
+        3. Derive the vehicle's starting point in the costmap 
         
         # 3. Convert the occupancy grid's underlying data field to an easier to
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
 
-        # 4. Create an array of all the free space cell locations in the grid.
-
+        # Basically, at this point, run the RRT algorithm given the costmap and
+        # free space.
+        try:
+            rrt(costmap=numpy_occupancy_grid,
+                start_point=)
+        except Exception as exc:
+            self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
+            return
+        
         # From here, we run the RRT loop, where we sample a point, find the
         # closest node in the tree (euclidean distance) to this node, compute a
         # new node location on a line from nearest to sampled, check to see if

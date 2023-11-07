@@ -2,6 +2,8 @@
 from typing import Tuple, Optional
 import numpy as np
 
+from lab6_pkg.laser_costmap_utils import GridPosition
+
 def free_space_from_costmap(costmap: np.ndarray,
                             occupied_threshold: Optional[int] = 100) -> np.ndarray:
     """Returns a 2D array (which could really be interpretted as a list of
@@ -155,3 +157,39 @@ def near(self, tree, node):
     """
     neighborhood = []
     return neighborhood
+
+# class def for tree nodes
+# It's up to you if you want to use this
+class TreeNode(object):
+    def __init__(self):
+        self.x = None
+        self.y = None
+        self.parent = None
+        self.is_root = False
+
+# NOT SURE YET if this function specifically should return that Path object, or
+# if it just should be a raw array of waypoints along the path--and then a
+# separate function upstream could convert those into Poses and then into a
+# path. Only say that because the function that calls this one will have all
+# that metadata needed to construct a formal message.
+
+# On that note: I think I want to implement this RRT function as being use-case
+# agnostic. I.e., I want this algorithm to work no matter where it is deployed.
+# I.e., this function shouldn't know anything about ROS--it should just be its
+# own independent function that we call FROM the rrt node to run RRT on a
+# provided 2D array/costmap--but nothing else.
+def rrt(costmap: np.ndarray,
+        start_point: GridPosition,
+        goal_point: GridPosition) -> list(GridPosition):
+    # Start point and goal point are both assumed to be within the bounds of the
+    # provided costmap
+
+    # I also think that this function should be the one responsible for
+    # extracting that free space array from the costmap internally, as its not
+    # needed outside of the context of this function! It's only ever needed in
+    # here, therefore, I think that should be one of this function's
+    # "initialization" steps.
+    free_space = free_space_from_costmap(costmap=costmap)
+    
+    
+    pass
