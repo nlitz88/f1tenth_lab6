@@ -9,10 +9,11 @@ import math
 
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PointStamped
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, PoseWithCovarianceStamped
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
@@ -22,7 +23,7 @@ from tf2_ros.transform_listener import TransformListener
 import tf2_geometry_msgs
 
 from lab6_pkg.rrt_utils import *
-from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid, project_continuous_point_to_grid
+from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid, project_continuous_point_to_grid, occupancy_grid_from_twod_numpy
 
 # TODO: import as you need
 
@@ -48,23 +49,23 @@ class RRT(Node):
         self.__path_frame = self.get_parameter("path_frame").value
 
         # Create goal pose subscriber.
-        self.__goal_pose_subscriber = self.create_subscription(msg_type=PointStamped,
-                                                                topic="goal",
+        self.__goal_pose_subscriber = self.create_subscription(msg_type=PoseStamped,
+                                                                topic="goal_pose",
                                                                 callback=self.__goal_pose_callback,
                                                                 qos_profile=10)
         # Variable to store latest copy of received goal pose. NOTE that I
         # don't think you need a lock here, as we're not asynchronously updating
         # this value from multiple threads in this node (at least I don't
         # think).
-        self.__goal_pose: PointStamped = None
+        self.__goal_pose: PoseStamped = None
 
         # Create subscriber for the vehicle's pose. This will serve as the
         # starting point for RRT. I.e., where the path will be planned from.
-        self.__pose_subscriber = self.create_subscription(msg_type=PoseStamped,
+        self.__pose_subscriber = self.create_subscription(msg_type=PoseWithCovarianceStamped,
                                                           topic="pose",
                                                           callback=self.__pose_callback,
                                                           qos_profile=10)
-        self.__pose: PoseStamped = None
+        self.__pose: PoseWithCovarianceStamped = None
 
         self.__costmap_subscriber = self.create_subscription(msg_type=OccupancyGrid,
                                                                    topic="costmap",
@@ -76,17 +77,24 @@ class RRT(Node):
         self.__transform_buffer = Buffer()
         self.__transform_listener = TransformListener(buffer=self.__transform_buffer, node=self)
 
-    def __goal_pose_callback(self, goal_pose: Point) -> None:
+        # NOTE This is just a TEMPORARY occupancy grid publisher FOR DEBUGGING.
+        # Just need this to visualize what's going on in the map and make sure
+        # things are happening in the right place.
+        self.__temp_occ_publisher = self.create_publisher(msg_type=OccupancyGrid, 
+                                                          topic="debug_costmap",
+                                                          qos_profile=10)
+
+    def __goal_pose_callback(self, goal_pose: PoseStamped) -> None:
         """Callback function for storing the most recently received goal pose
         that RRT will plan a path to.
 
         Args:
-            goal_pose (Point): (x,y) position that RRT will plan a path to.
+            goal_pose (PoseStamped): (x,y) position that RRT will plan a path to.
         """
         self.__goal_pose = goal_pose
         return
     
-    def __pose_callback(self, pose: PoseStamped) -> None:
+    def __pose_callback(self, pose: PoseWithCovarianceStamped) -> None:
         """
         The pose callback when subscribed to particle filter's inferred pose
         Here is where the main RRT loop happens
@@ -94,9 +102,8 @@ class RRT(Node):
         Do we need a lock to synchronize access to the occupancy grid?
 
         Args: 
-            pose_msg (PoseStamped): incoming message from subscribed topic
-        Returns:
-
+            pose_msg (PoseWithCovarianceStamped): incoming message from
+            subscribed topic 
         """
         self.__pose = pose
         return
@@ -116,7 +123,6 @@ class RRT(Node):
         """
         # Store local copy of costmap.
         self.__costmap = costmap
-
         # TODO
         # While this IS the function where we "run rrt," I don't want this to be
         # the function where all of its parts are integrated and put together.
@@ -135,33 +141,36 @@ class RRT(Node):
             # If so, get the transform from the goal poses frame to the frame
             # the occupancy grid is in.
             goal_to_grid_transform = self.__transform_buffer.lookup_transform(source_frame=self.__goal_pose.header.frame_id,
-                                                                              target_frame=self.__costmap.header.frame_id)
-            transformed_goal_pose = tf2_geometry_msgs.do_transform_pose(pose=self.__goal_pose,
-                                                                        transform=goal_to_grid_transform)
+                                                                              target_frame=self.__costmap.header.frame_id,
+                                                                              time=Time())
+            transformed_goal_pose = tf2_geometry_msgs.do_transform_pose_stamped(pose=self.__goal_pose,
+                                                                                transform=goal_to_grid_transform)
         except Exception as exc:
             self.get_logger().error(f"Failed to transform goal pose to costmap's frame.\nException: {str(exc)}")
+            return
 
         # 2. Project the transformed goal pose's position onto the costmap.
         # goal_grid_coords = project_continous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
         #                                                    continous_point=)
-        continuous_goal_position = (transformed_goal_pose.position.x, transformed_goal_pose.position.y)
+        continuous_goal_position = (transformed_goal_pose.pose.position.x, transformed_goal_pose.pose.position.y)
         goal_position = project_continuous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
                                                          continuous_point=continuous_goal_position)
 
-        # NOTE: As a quick test, let's take the transformed goal pose, get the
-        # point inside, project it onto the occupancy 
-
-        # 2. Convert the occupancy grid's underlying data field to an easier to
+        # 3. Convert the occupancy grid's underlying data field to an easier to
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
-        
-        
+
+        # NOTE: As a quick test, let's take the transformed goal pose, get the
+        # point inside, project it onto the occupancy 
+        numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
+        costmap.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
+        self.__temp_occ_publisher.publish(costmap)
 
         # 2. Randomly select a cell from the free space discovered in the
         #    occupancy grid.
         sampled_cell = sample(costmap=numpy_occupancy_grid)
-
-        # 
+        # TODO: Test sampled cell by publishing an updated costmap with this
+        # cell Just to visualize.
 
 
 def main(args=None):

@@ -47,7 +47,8 @@ def generate_launch_description():
         package="lab6_pkg",
         executable="rrt_node.py",
         parameters=[simulation_params],
-        # remappings=[("", "")]
+        remappings=[("costmap", "laser_local_costmap"),
+                    ("pose", "ego_racecar/pose")]
     )
     # Add the launch_ros "Node" actions we created.
     ld.add_action(pose_publisher_node)
