@@ -167,21 +167,53 @@ def nearest(tree: Tree, sampled_point: Tuple[int, int]) -> int:
                                        sampled_point=sampled_point)
     return nearest_node_index
 
-def steer(self, nearest_node, sampled_point):
-    """
-    This method should return a point in the viable set such that it is closer 
-    to the nearest_node than sampled_point is.
+def steer_and_check(nearest_point: Tuple[int, int],
+                    sampled_point: Tuple[int, int],
+                    costmap: np.ndarray,
+                    new_point_distance: float) -> Tuple[int, int]:
+    
+    # Draw a line from nearest point from sampled point using Bresenham's line
+    # algorithm. Walk along the the points in that line and stop if there is an
+    # occupied cell along the line. If an occupied cell is not encountered.
+    pass
+    # Could also implement this between those two functions where I just first
+    # generate what the new point must be using the angle and specified
+    # distance.
+    
+
+    # Then, in the check collision function, I could 
+
+
+def steer(nearest_point: Tuple[int, int],
+          sampled_point: Tuple[int, int],
+          new_point_distance: float) -> Tuple[int, int]:
+    """Returns the grid coordinates of a new point at new_point_distance from
+    the nearest_point in the direction of the line from nearest_point to
+    sampled_point.
 
     Args:
-        nearest_node (Node): nearest node on the tree to the sampled point
-        sampled_point (tuple of (float, float)): sampled point
+        nearest_point (Tuple[int, int]): nearest node on the tree to the sampled point
+        sampled_point (Tuple[int, int]): sampled point
     Returns:
-        new_node (Node): new node created from steering
+        Tuple[int, int]: The grid coordinates of the new node.
     """
-    new_node = None
-    return new_node
+    # Compute the angle of the line from the x-axis that separates these two
+    # points. Need the resulting vector separating the two points, compute the
+    # components of that vector first.
+    x_comp = sampled_point[0] - nearest_point[0]
+    y_comp = sampled_point[1] - nearest_point[1]
+    # Compute the angle using an arctangent function that takes into account
+    # different the different quadrants that our point x_comp, y_comp could fall
+    # into.
+    angle = np.arctan2(x_comp, y_comp)
+    # Compute the x and y component of the new point that is new_point_distance
+    # from the starting point at the computed angle.
+    x_new = int(nearest_point[0] + new_point_distance*np.cos(angle))
+    y_new = int(nearest_point[1] + new_point_distance*np.sin(angle))
+    return (x_new, y_new)
 
-def check_collision(self, nearest_node, new_node):
+def check_collision():
+    # ALSO CHECK TO SEE IF IT'S IN BOUNDS OF THE GRID!!!
     """
     This method should return whether the path between nearest and new_node is
     collision free.
@@ -281,6 +313,7 @@ def rrt(costmap: np.ndarray,
         start_point: GridPosition,
         goal_point: GridPosition,
         goal_radius: int,
+        
         max_iterations: int,
         logger) -> List[GridPosition]:
     # Start point and goal point are both assumed to be within the bounds of the
@@ -303,11 +336,29 @@ def rrt(costmap: np.ndarray,
     iteration_count = 0
     while iteration_count < max_iterations and not path_found:
         
-        # Randomly sample a point in free space.
-        sampled_point = sample(free_space=free_space)
-        # Find the point in the tree that is closest to the sampled point.
-        nearest_node_to_sample = nearest(tree=rrt_tree, sampled_point=sampled_point)
+        # 1. Randomly sample a point in free space.
+        sampled_point_coords = sample(free_space=free_space)
+        # 2. Find the point in the tree that is closest to the sampled point.
+        nearest_node_to_sample = nearest(tree=rrt_tree, sampled_point=sampled_point_coords)
+        nearest_point_coords = rrt_tree.get_node_coordinates(node_index=nearest_node_to_sample)
+        # NOTE: DEBUG
         logger.info(f"Nearest point: {(rrt_tree.get_node_coordinates(node_index=nearest_node_to_sample))}")
+
+        # Check for a collision along the line from the nearest point in the
+        # tree to the sampled point to determine if we can add a new node in
+        # the direction of that node.
+        # NOTE: as an optimization for later, we could instead check to see if
+        # there is a collision within some fixed distance. If there isn't a
+        # collision within a certain distance (that we could perhaps check first
+        # with the underlying function), then we can just make the new node at
+        # that distance along that line. For the sake of simplicity and time,
+        # I think I may just do this to start. I.e., sorta morphing the check
+        # collision and new point in one. But really, we're just checking for a
+        # collision within the distance that we'd make that new node at.
+
+
+
+        # DEBUG
         path_found = True
 
     return []

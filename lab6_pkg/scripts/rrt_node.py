@@ -188,6 +188,12 @@ class RRT(Node):
         except Exception as exc:
             self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
             return
+
+        # For testing the collision function, pass in the goal point as the
+        # sampled point, print out whether it finds a collision or not, and if
+        # there is a new point, plot it on the grid. Plotting on the grid will
+        # be the true sign that the collision checking and steering is working
+        # properly.
         
         # From here, we run the RRT loop, where we sample a point, find the
         # closest node in the tree (euclidean distance) to this node, compute a
