@@ -25,5 +25,6 @@ laser_costmap:
     resolution_m_c: 0.05
     splat_radius: 4
 
-# rrt:
-#   ros__parameters:
+rrt:
+  ros__parameters:
+    

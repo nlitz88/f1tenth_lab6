@@ -18,7 +18,7 @@ from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from nav_msgs.msg import OccupancyGrid
 
-from lab6_pkg.laser_costmap_utils import laser_update_occupancy_grid_temp
+from lab6_pkg.rrt_utils import *
 
 # TODO: import as you need
 
@@ -36,67 +36,66 @@ class RRT(Node):
     def __init__(self):
         super().__init__("rrt")
 
-        # topics, not saved as attributes
-        # TODO: grab topics from param file, you'll need to change the yaml file
-        pose_topic = "ego_racecar/odom"
-        scan_topic = "/scan"
+        # Set up / declare node parameters.
+        self.declare_parameters(namespace="",
+                                parameters=[
+                                    ("path_frame", rclpy.Parameter.Type.STRING)
+                                ])
+        self.__path_frame = self.get_parameter("path_frame").value
 
-        # you could add your own parameters to the rrt_params.yaml file,
-        # and get them here as class attributes as shown above.
+        # Create goal point subscriber.
+        self.__goal_point_subscriber = self.create_subscription(msg_type=Point,
+                                                                topic="goal_point",
+                                                                callback=self.__goal_point_callback,
+                                                                qos_profile=10)
+        # Variable to store latest copy of received goal point. NOTE that I
+        # don't think you need a lock here, as we're not asynchronously updating
+        # this value from multiple threads in this node (at least I don't
+        # think).
+        self.__goal_point: Point = None
 
-        # TODO: create subscribers
-        self.pose_sub_ = self.create_subscription(
-            PoseStamped,
-            pose_topic,
-            self.pose_callback,
-            1)
-        self.pose_sub_
+        self.__costmap_subscriber = self.create_subscription(msg_type=OccupancyGrid,
+                                                                   topic="costmap",
+                                                                   callback=self.__costmap_callback,
+                                                                   qos_profile=10)
+        self.__costmap: OccupancyGrid = None
+        
+        # Create subscriber for the vehicle's pose. This will serve as the
+        # starting point for RRT. I.e., where the path will be planned from.
+        self.__pose_subscriber = self.create_subscription(msg_type=PoseStamped,
+                                                          topic="pose",
+                                                          callback=self.__pose_callback,
+                                                          qos_profile=10)
+        self.__pose: PoseStamped = None
 
-        self.scan_sub_ = self.create_subscription(
-            LaserScan,
-            scan_topic,
-            self.scan_callback,
-            1)
-        self.scan_sub_
+    def __goal_point_callback(self, goal_point: Point) -> None:
+        """Callback function for storing the most recently received goal point
+        that RRT will plan a path to.
 
-        self.__laser_occupancy_grid_publisher = self.create_publisher(msg_type=OccupancyGrid,
-                                                                      topic="laser_occupancy_grid",
-                                                                      qos_profile=10)
-
-        # publishers
-        # TODO: create a drive message publisher, and other publishers that you might need
-
-        # class attributes
-        # TODO: maybe create your occupancy grid here
-
-    def scan_callback(self, scan_msg):
+        Args:
+            goal_point (Point): (x,y) position that RRT will plan a path to.
         """
-        LaserScan callback, you should update your occupancy grid here. Without
-        making things too complicated, would it be better to offload this task
-        to another node? OR, is this kind of occupancy grid specifically only
-        really needed by RRT? Could keep it in here until it needs to be taken
-        out--just pull out its functions into separate modules (I.e., one just
-        for helpers and main functions for occupancy grid generation).
+        pass
 
-        Args: 
-            scan_msg (LaserScan): incoming message from subscribed topic
-        Returns:
+    def __costmap_callback(self, costmap: OccupancyGrid) -> None:
+        """Plans a path to the latest goal point using RRT in the received
+        costmap. It will transform the published goal point into the frame of
+        the received costmap, plan a path in the received costmap to the goal
+        point using RRT, and then publish a resulting Path in the costmap's
+        frame or the frame specified by the path_frame parameter. It'd probably
+        be best to set that parameter to whatever frame your path tracker is
+        expecting the Path to be in, especially if it can't transform those
+        points itself.
 
+        Args:
+            costmap (OccupancyGrid): 2D costmap that RRT will be run in. 
         """
-
-        # For now, let's just test generating and publishing an occupancy grid
-        # based on the laserscan message we get. Should publish it anyway just
-        # for the sake of being able to visualize what it's generating.
-        new_grid = OccupancyGrid()
-        new_grid.info.height = 1000
-        new_grid.info.width = 1000
-        new_grid.info.origin
-        updated_grid = laser_update_occupancy_grid_temp(scan_message=scan_msg,
-                                                        current_occupancy_grid=new_grid)
-        self.__laser_occupancy_grid_publisher.publish(updated_grid)
-
-
-    def pose_callback(self, pose_msg):
+        # NOTE: This is the function where the planning algorithm will be
+        # invoked. I.e., whenever we receive an updated costmap, that's when
+        # we'll replan with RRT.
+        pass
+    
+    def __pose_callback(self, pose: PoseStamped) -> None:
         """
         The pose callback when subscribed to particle filter's inferred pose
         Here is where the main RRT loop happens
@@ -108,8 +107,8 @@ class RRT(Node):
         Returns:
 
         """
+        pass
 
-        return None
 
     def sample(self):
         """
@@ -168,6 +167,8 @@ class RRT(Node):
             collision (bool): whether the path between the two nodes are in collision
                               with the occupancy grid
         """
+        # NOTE: Can probably use Bresenham's line algorithm to help us with
+        # this--probably the most straightforward.
         return True
 
     def is_goal(self, latest_added_node, goal_x, goal_y):
