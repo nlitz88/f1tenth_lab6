@@ -101,6 +101,10 @@ def project_continuous_point_to_grid(occupancy_grid: OccupancyGrid,
         continuous_point (Tuple[float, float]): The point as expressed in terms
         of the parent frame of the provided occupancy grid.
 
+    Raises:
+        Exception: If the point projects to a cell location that goes out of
+        bounds of the occupancy grid, throws an exception.
+        
     Returns:
         Tuple[int, int]: The x,y coordinates as grid-cell coordinates, or cell
         offsets from the grid's origin.
@@ -112,6 +116,10 @@ def project_continuous_point_to_grid(occupancy_grid: OccupancyGrid,
     resolution_c_m = 1.0/occupancy_grid.info.resolution
     point_cell_x = int(offset_point_x*resolution_c_m)
     point_cell_y = int(offset_point_y*resolution_c_m)
+    # Check if the projection is within the bounds of the occupancy grid.
+    if (point_cell_x < 0 or point_cell_x > occupancy_grid.info.width - 1) or \
+        (point_cell_y < 0 or point_cell_y > occupancy_grid.info.height - 1):
+        raise Exception("Provided point projects to location outside of occupancy grid!")
     return (point_cell_x, point_cell_y)
     
 # Okay, so, I have the sequence of steps that'll be needed to build up an

@@ -146,16 +146,28 @@ class RRT(Node):
             transformed_goal_pose = tf2_geometry_msgs.do_transform_pose_stamped(pose=self.__goal_pose,
                                                                                 transform=goal_to_grid_transform)
         except Exception as exc:
-            self.get_logger().error(f"Failed to transform goal pose to costmap's frame.\nException: {str(exc)}")
+            self.get_logger().warning(f"Failed to transform goal pose to costmap's frame.\nException: {str(exc)}")
             return
 
-        # 2. Project the transformed goal pose's position onto the costmap.
+        # 2. Project the transformed goal pose's position onto the costmap. 
+        #    TODO For now, there aren't any protections against trying to
+        #    project a point onto the grid and the resulting cell position is
+        #    out of bounds. In that case, for now, the RRT node is just going to
+        #    ignore that goal position until the vehicle moves enough so that it
+        #    IS in bounds, but it won't publish a new path until the goal pose
+        #    is in bounds of the occupancy grid. In the future, could use
+        #    something like the steer function or Bresenham line function to
+        #    get the closest point that IS in free space.
         # goal_grid_coords = project_continous_point_to_grid(grid_resolution_m_c=costmap.info.resolution,
         #                                                    continous_point=)
         continuous_goal_position = (transformed_goal_pose.pose.position.x, transformed_goal_pose.pose.position.y)
-        goal_position = project_continuous_point_to_grid(occupancy_grid=costmap,
-                                                         continuous_point=continuous_goal_position)
-
+        try:
+            goal_position = project_continuous_point_to_grid(occupancy_grid=costmap,
+                                                            continuous_point=continuous_goal_position)
+        except Exception as exc:
+            self.get_logger().warning(f"Failed to project goal pose to costmap occupancy grid.\nException: {str(exc)}")
+            return
+        
         # 3. Convert the occupancy grid's underlying data field to an easier to
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
