@@ -215,19 +215,31 @@ def steer(nearest_point: Tuple[int, int],
     y_new = int(nearest_point[1] + new_point_distance*np.sin(angle))
     return (x_new, y_new)
 
-def check_collision():
-    # ALSO CHECK TO SEE IF IT'S IN BOUNDS OF THE GRID!!!
-    """
-    This method should return whether the path between nearest and new_node is
-    collision free.
+def check_collision(nearest_point: Tuple[int, int],
+                    new_point: Tuple[int, int], 
+                    costmap: np.ndarray,
+                    occupied_threshold: Optional[int] = 100) -> bool:
+    """Check for a collision along the line connecting the nearest point to the
+    new_point. Uses Bresenham's line algorithm to determine each x,y coordinate
+    along the line and checks for occupancy at each position along the line.
+    Returns false if no collision is found, returns true if occupied spaces are
+    found along the path.
 
     Args:
-        nearest (Node): nearest node on the tree
-        new_node (Node): new node from steering
+        nearest_point (Tuple[int, int]): Point the line will drawn from.
+        new_point (Tuple[int, int]): Point the line will be drawn to.
+        costmap (np.ndarray): The 2D occupancy grid used to determine occupancy
+        of spaces along the line.
+        occupied_threshold (Optional[int], optional): The cost that a cell must
+        be in order to be considered occupied space. Defaults to 100.
+
     Returns:
-        collision (bool): whether the path between the two nodes are in collision
-                            with the occupancy grid
+        bool: Returns True if a point along the path is found to be occupied in
+        the occupancy grid, False if no points along the path are occupied.
     """
+    
+    # ALSO CHECK TO SEE IF IT'S IN BOUNDS OF THE GRID!!!
+    
     # NOTE: Can probably use Bresenham's line algorithm to help us with
     # this--probably the most straightforward.
     return True
