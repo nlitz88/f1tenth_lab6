@@ -172,6 +172,14 @@ class RRT(Node):
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
 
+        # 4. Create an array of all the free space cell locations in the grid.
+
+        # From here, we run the RRT loop, where we sample a point, find the
+        # closest node in the tree (euclidean distance) to this node, compute a
+        # new node location on a line from nearest to sampled, check to see if
+        # there's a collision between nearest and new using that same line, then
+        # add that new node to the tree if not. Repeat.
+
         # NOTE: As a quick test, let's take the transformed goal pose, get the
         # point inside, project it onto the occupancy 
         numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100

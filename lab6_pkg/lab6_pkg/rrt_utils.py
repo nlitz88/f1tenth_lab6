@@ -25,6 +25,9 @@ def sample(costmap: np.ndarray,
     #    cost is less than the cost threshold. Take the transpose to get an
     #    array of [x,y] arrays, rather than two separate, parallel x and y index
     #    arrays. Have to flip so that x coords (columns) are on top.
+    # TODO: May want to separate this out into a separate block or something and
+    # pass it in, as we're going to have to sample from this free_coords array
+    # repeatedly.
     free_coords = np.transpose(np.flip(np.where(costmap < occupied_threshold)))
     if free_coords.shape[0] == 0:
         raise Exception("No free spaces found to sample from in costmap.")
