@@ -54,12 +54,6 @@ class RRT(Node):
         # think).
         self.__goal_point: Point = None
 
-        self.__costmap_subscriber = self.create_subscription(msg_type=OccupancyGrid,
-                                                                   topic="costmap",
-                                                                   callback=self.__costmap_callback,
-                                                                   qos_profile=10)
-        self.__costmap: OccupancyGrid = None
-        
         # Create subscriber for the vehicle's pose. This will serve as the
         # starting point for RRT. I.e., where the path will be planned from.
         self.__pose_subscriber = self.create_subscription(msg_type=PoseStamped,
@@ -68,6 +62,12 @@ class RRT(Node):
                                                           qos_profile=10)
         self.__pose: PoseStamped = None
 
+        self.__costmap_subscriber = self.create_subscription(msg_type=OccupancyGrid,
+                                                                   topic="costmap",
+                                                                   callback=self.__costmap_callback,
+                                                                   qos_profile=10)
+        self.__costmap: OccupancyGrid = None
+
     def __goal_point_callback(self, goal_point: Point) -> None:
         """Callback function for storing the most recently received goal point
         that RRT will plan a path to.
@@ -75,7 +75,23 @@ class RRT(Node):
         Args:
             goal_point (Point): (x,y) position that RRT will plan a path to.
         """
-        pass
+        self.__goal_point = goal_point
+        return
+    
+    def __pose_callback(self, pose: PoseStamped) -> None:
+        """
+        The pose callback when subscribed to particle filter's inferred pose
+        Here is where the main RRT loop happens
+         
+        Do we need a lock to synchronize access to the occupancy grid?
+
+        Args: 
+            pose_msg (PoseStamped): incoming message from subscribed topic
+        Returns:
+
+        """
+        self.__pose = pose
+        return
 
     def __costmap_callback(self, costmap: OccupancyGrid) -> None:
         """Plans a path to the latest goal point using RRT in the received
@@ -94,21 +110,6 @@ class RRT(Node):
         # invoked. I.e., whenever we receive an updated costmap, that's when
         # we'll replan with RRT.
         pass
-    
-    def __pose_callback(self, pose: PoseStamped) -> None:
-        """
-        The pose callback when subscribed to particle filter's inferred pose
-        Here is where the main RRT loop happens
-         
-        Do we need a lock to synchronize access to the occupancy grid?
-
-        Args: 
-            pose_msg (PoseStamped): incoming message from subscribed topic
-        Returns:
-
-        """
-        pass
-
 
     def sample(self):
         """
