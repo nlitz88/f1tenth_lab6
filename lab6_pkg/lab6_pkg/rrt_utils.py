@@ -215,9 +215,13 @@ def steer(nearest_point: Tuple[int, int],
     y_new = int(nearest_point[1] + new_point_distance*np.sin(angle))
     return (x_new, y_new)
 
+def point_in_costmap(point: Tuple[int, int], costmap: np.ndarray) -> bool:
+    pass
+
 def check_collision(nearest_point: Tuple[int, int],
                     new_point: Tuple[int, int], 
                     costmap: np.ndarray,
+                    logger,
                     occupied_threshold: Optional[int] = 100) -> bool:
     """Check for a collision along the line connecting the nearest point to the
     new_point. Uses Bresenham's line algorithm to determine each x,y coordinate
@@ -226,8 +230,12 @@ def check_collision(nearest_point: Tuple[int, int],
     found along the path.
 
     Args:
-        nearest_point (Tuple[int, int]): Point the line will drawn from.
-        new_point (Tuple[int, int]): Point the line will be drawn to.
+        nearest_point (Tuple[int, int]): Point the line will drawn from. This
+        point MUST be within the bounds of the costmap, will throw an exception
+        otherwise.
+        new_point (Tuple[int, int]): Point the line will be drawn to. This
+        point MUST be within the bounds of the costmap, will throw an exception
+        otherwise.
         costmap (np.ndarray): The 2D occupancy grid used to determine occupancy
         of spaces along the line.
         occupied_threshold (Optional[int], optional): The cost that a cell must
@@ -237,12 +245,56 @@ def check_collision(nearest_point: Tuple[int, int],
         bool: Returns True if a point along the path is found to be occupied in
         the occupancy grid, False if no points along the path are occupied.
     """
-    
-    # ALSO CHECK TO SEE IF IT'S IN BOUNDS OF THE GRID!!!
-    
-    # NOTE: Can probably use Bresenham's line algorithm to help us with
-    # this--probably the most straightforward.
-    return True
+
+    collision_found = False
+    # Extract the x and y components of the nearest point (which is our first
+    # point), and the new_point (which is our second, destination point).
+    x1, y1 = nearest_point
+    x2, y2 = new_point
+    # Using a version of Bresenham's algorithm that doesn't use floating point
+    # derived from this GeeksForGeeks page:
+    # https://www.geeksforgeeks.org/bresenhams-line-generation-algorithm/
+
+    # Define variables to track current position, initialize at starting
+    # position.
+    y = y1
+    x = x1
+
+    # Have to evaluate the first position before any others.
+    if costmap[y, x] >= occupied_threshold:
+        logger.info(f"Found collision at point ({x},{y}) while walking from starting point {nearest_point} to ending point {new_point}")
+        collision_found = True
+    # Compute the adjusted slope (adjusted to avoid floating point arithmetic
+    # later) and initialize the (adjusted) slope error.
+    adjusted_slope = 2*(y2-y1)
+    adjusted_slope_error = adjusted_slope - (x2-x1)
+
+    while not collision_found and x < x2+1:
+        
+        # 1. Update the slope error for computing the next value. I.e., this
+        #    will be the error once we'll use to figure out what to do to get
+        #    the next value.
+        adjusted_slope_error += adjusted_slope
+        
+        # 2. Get the next point in the line (know the next x value in the range,
+        #    use Bresenham's to get the next corresponding y value).
+        x += 1
+        # If the slope error has reached 0, that means it's time to increment y
+        # up to the next value.
+        if adjusted_slope_error >= 0:
+            y += 1
+            adjusted_slope = adjusted_slope - 2 * (x2-x1)
+        
+        # 3. Check for collision at the new position.
+        if costmap[y, x] >= occupied_threshold:
+            logger.info(f"Found collision at point ({x},{y}) while walking from starting point {nearest_point} to ending point {new_point}")
+            collision_found = True
+
+        # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
+        # line.
+        costmap[y,x] = 100
+
+    return collision_found
 
 def is_goal(self, latest_added_node, goal_x, goal_y):
     """
@@ -371,6 +423,9 @@ def rrt(costmap: np.ndarray,
         # collision and new point in one. But really, we're just checking for a
         # collision within the distance that we'd make that new node at.
 
+        # TODO: Need to call a function here that checks to see if the
+        # point/grid position returned by steer is actually within the bounds of
+        # the costmap.
 
 
         # DEBUG
