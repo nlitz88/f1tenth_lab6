@@ -206,17 +206,23 @@ class RRT(Node):
 
         # NOTE: As a quick test, let's take the transformed goal pose, get the
         # point inside, project it onto the occupancy 
-        numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
-        numpy_occupancy_grid[start_position[1], start_position[0]] = 100
+        # numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
+        # numpy_occupancy_grid[start_position[1], start_position[0]] = 100
 
         # Test steer function using goal point as sampled point and start point
         # as nearest point.
-        new_point = steer(nearest_point=(start_position[0], start_position[1]),
-                          sampled_point=(goal_position[0], goal_position[1]),
-                          new_point_distance=self.__new_point_distance,
-                          logger=self.get_logger())
-        self.get_logger().info(f"New point: {new_point}")
-        numpy_occupancy_grid[new_point[1], new_point[0]] = 100
+        # new_point = steer(nearest_point=(start_position[0], start_position[1]),
+        #                   sampled_point=(goal_position[0], goal_position[1]),
+        #                   new_point_distance=self.__new_point_distance,
+        #                   logger=self.get_logger())
+        # self.get_logger().info(f"New point: {new_point}")
+        # numpy_occupancy_grid[new_point[1], new_point[0]] = 100
+
+        # NOTE: Test the check collision function.
+        check_collision(nearest_point=start_position,
+                        new_point=goal_position, 
+                        costmap=numpy_occupancy_grid,
+                        logger=self.get_logger())
         
         # 4. Randomly select a cell from the free space discovered in the
         #    occupancy grid.

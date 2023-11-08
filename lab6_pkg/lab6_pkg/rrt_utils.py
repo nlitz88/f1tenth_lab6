@@ -283,7 +283,7 @@ def check_collision(nearest_point: Tuple[int, int],
         # up to the next value.
         if adjusted_slope_error >= 0:
             y += 1
-            adjusted_slope = adjusted_slope - 2 * (x2-x1)
+            adjusted_slope_error = adjusted_slope_error - 2 * (x2-x1)
         
         # 3. Check for collision at the new position.
         if costmap[y, x] >= occupied_threshold:
