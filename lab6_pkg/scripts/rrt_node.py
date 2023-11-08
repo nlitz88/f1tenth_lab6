@@ -63,13 +63,6 @@ class RRT(Node):
         self.__transform_buffer = Buffer()
         self.__transform_listener = TransformListener(buffer=self.__transform_buffer, node=self)
 
-        # NOTE This is just a TEMPORARY occupancy grid publisher FOR DEBUGGING.
-        # Just need this to visualize what's going on in the map and make sure
-        # things are happening in the right place.
-        self.__temp_occ_publisher = self.create_publisher(msg_type=OccupancyGrid, 
-                                                          topic="debug_costmap",
-                                                          qos_profile=10)
-
     def __goal_pose_callback(self, goal_pose: PoseStamped) -> None:
         """Callback function for storing the most recently received goal pose
         that RRT will plan a path to.

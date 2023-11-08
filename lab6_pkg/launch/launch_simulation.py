@@ -34,7 +34,8 @@ def generate_launch_description():
         package="pure_pursuit",
         executable="pure_pursuit_node.py",
         parameters=[simulation_params],
-        remappings=[("pose", "ego_racecar/pose")]
+        remappings=[("pose", "ego_racecar/pose"),
+                    ("path", "rrt_path")]
         # arguments=["--ros-args", "--log-level", "debug"]
     )
     laser_costmap_node = Node(

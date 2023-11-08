@@ -34,6 +34,6 @@ rrt:
 
 goal_publisher:
   ros__parameters:
-    lookahead_distance_m: 2.0
+    lookahead_distance_m: 1.5
     max_lookahead_distance_m: 7.0
     min_lookahead_distance_m: 1.5
