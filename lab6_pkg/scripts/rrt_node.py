@@ -21,13 +21,13 @@ class RRT(Node):
         self.declare_parameters(namespace="",
                                 parameters=[
                                     ("path_frame", rclpy.Parameter.Type.STRING),
-                                    ("goal_radius", 4),
-                                    ("new_point_distance", 3.0),
+                                    ("goal_radius_m", 0.20),
+                                    ("new_point_distance_m", 0.25),
                                     ("max_rrt_iterations", 200)
                                 ])
         self.__path_frame = self.get_parameter("path_frame").value
-        self.__goal_radius = self.get_parameter("goal_radius").value
-        self.__new_point_distance = self.get_parameter("new_point_distance").value
+        self.__goal_radius_m = self.get_parameter("goal_radius_m").value
+        self.__new_point_distance_m = self.get_parameter("new_point_distance_m").value
         self.__max_rrt_iterations = self.get_parameter("max_rrt_iterations").value
 
         # Create goal pose subscriber.
@@ -103,15 +103,6 @@ class RRT(Node):
         Args:
             costmap (OccupancyGrid): 2D costmap that RRT will be run in. 
         """
-        # Store local copy of costmap.
-        self.__costmap = costmap
-        # TODO
-        # While this IS the function where we "run rrt," I don't want this to be
-        # the function where all of its parts are integrated and put together.
-        # That should be in a separate RRT algorithm function. If it has to be,
-        # fine, but that's not ideal. For now, I'll build it in here, but I can
-        # always "integrate" (or bring together) all the steps in a separate
-        # function later.
 
         # 1. Attempt transform the most recently received goal pose to the
         #    frame of the received costmap. Bail if not possible or if there
@@ -123,7 +114,7 @@ class RRT(Node):
             # If so, get the transform from the goal poses frame to the frame
             # the occupancy grid is in.
             goal_to_grid_transform = self.__transform_buffer.lookup_transform(source_frame=self.__goal_pose.header.frame_id,
-                                                                              target_frame=self.__costmap.header.frame_id,
+                                                                              target_frame=costmap.header.frame_id,
                                                                               time=Time())
             transformed_goal_pose = tf2_geometry_msgs.do_transform_pose_stamped(pose=self.__goal_pose,
                                                                                 transform=goal_to_grid_transform)
@@ -164,17 +155,25 @@ class RRT(Node):
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
 
+        # 6. As a small step prior to running RRT, based on the occupancy grid's
+        #    resolution, convert the provied new_point_distance and
+        #    goal_point_radius from meters to cells.
+        goal_radius_c = int((1.0/costmap.info.resolution)*self.__goal_radius_m)
+        new_point_distance_c = int((1.0/costmap.info.resolution)*self.__new_point_distance_m)
+
         # 6. Run the RRT algorithm on the provided costmap and other parameters
         #    to obtain its best-effort planned path from the provided start
         #    position to goal position.
         try:
-            path: List[Tuple[int, int]] = rrt(costmap=numpy_occupancy_grid,
-                                              start_point=start_position,
-                                              goal_point=goal_position,
-                                              goal_radius=self.__goal_radius,
-                                              max_iterations=self.__max_rrt_iterations)
+            path = rrt(costmap=numpy_occupancy_grid,
+                       start_point_coords=start_position,
+                       goal_point_coords=goal_position,
+                       goal_radius_c=goal_radius_c,
+                       new_point_distance_c=new_point_distance_c,
+                       max_iterations=self.__max_rrt_iterations)
+            
         except Exception as exc:
-            self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
+            self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc.with_traceback())}")
             return
 
         # 7. If RRT successfully planned a path from start to goal, take that
