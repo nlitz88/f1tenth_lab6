@@ -219,6 +219,7 @@ class RRT(Node):
         # numpy_occupancy_grid[new_point[1], new_point[0]] = 100
 
         # NOTE: Test the check collision function.
+        start_position = (start_position[0] + 15, start_position[1])
         check_collision(nearest_point=start_position,
                         new_point=goal_position, 
                         costmap=numpy_occupancy_grid,

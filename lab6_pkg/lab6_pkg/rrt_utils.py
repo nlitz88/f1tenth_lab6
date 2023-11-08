@@ -245,7 +245,6 @@ def check_collision(nearest_point: Tuple[int, int],
         bool: Returns True if a point along the path is found to be occupied in
         the occupancy grid, False if no points along the path are occupied.
     """
-
     collision_found = False
     # Extract the x and y components of the nearest point (which is our first
     # point), and the new_point (which is our second, destination point).
@@ -255,14 +254,49 @@ def check_collision(nearest_point: Tuple[int, int],
     # derived from this GeeksForGeeks page:
     # https://www.geeksforgeeks.org/bresenhams-line-generation-algorithm/
 
+    # NOTE: To account for the difference of these two points fallin in any
+    # quadrant: Basically, we will always "walk the line" in the "first
+    # quadrant," but based on the difference in x and y between the points, we
+    # will "interpret" (negate or not) the points on the line drawn in the first
+    # quadrant as being in the second, third, or fourth depending on the sign of
+    # our differences. Determine those sign/polarity transforms here.
+    # NOTE: UPDATE: So, after seeing this fail again, I think I realize why: We
+    # don't want to INVERT the x and y values, as within the grid, we ONLY HAVE
+    # POSITIVE INDICES! Therefore, instead of inverting, need to maintain the
+    # sign of the offset. OR rather, just record whatever the offset is, sign
+    # and everything, and then when we set the value of x2,y2 below to the
+    # positive offset from the first point, we just add the absolute value of
+    # that offset. Then, to get the "real value", add 2*the actual offset to the
+    # x and y values.
+    x_offset = x2-x1
+    y_offset = y2-y1
+
+    # Additionally, in order to make sure, then, that we're ALWAYS only drawing
+    # in the "first quadrant," I think we just have to make sure our second
+    # point is always the at the positive difference away from the starting
+    # point. I.e., the starting point should ALWAYS remain the same. But from
+    # this point forward, we should basically redefine x2,y2 (the second point)
+    # to be equal to be the positive difference between the two offset from the
+    # starting point.
+    x2 = x1 + np.abs(x_offset)
+    y2 = y1 + np.abs(y_offset)
+
     # Define variables to track current position, initialize at starting
     # position.
     y = y1
     x = x1
 
     # Have to evaluate the first position before any others.
-    if costmap[y, x] >= occupied_threshold:
-        logger.info(f"Found collision at point ({x},{y}) while walking from starting point {nearest_point} to ending point {new_point}")
+    if x_offset < 0:
+        x_real = x - 2*(x-x1)
+    else:
+        x_real = x
+    if y_offset < 0:
+        y_real = y - 2*(y-y1)
+    else:
+        y_real = y
+    if costmap[y_real, x_real] >= occupied_threshold:
+        logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
         collision_found = True
     # Compute the adjusted slope (adjusted to avoid floating point arithmetic
     # later) and initialize the (adjusted) slope error.
@@ -285,18 +319,31 @@ def check_collision(nearest_point: Tuple[int, int],
             y += 1
             adjusted_slope_error = adjusted_slope_error - 2 * (x2-x1)
         
-        # 3. Check for collision at the new position.
-        if costmap[y, x] >= occupied_threshold:
-            logger.info(f"Found collision at point ({x},{y}) while walking from starting point {nearest_point} to ending point {new_point}")
+        # 3. Interpret the "first quadrant line value" to the actual value based
+        #    on the coordinate sign variables above.
+        if x_offset < 0:
+            x_real = x - 2*(x-x1)
+        else:
+            x_real = x
+        if y_offset < 0:
+            y_real = y - 2*(y-y1)
+        else:
+            y_real = y
+        # 4. Check for collision at the interpretted position.
+        if costmap[y_real, x_real] >= occupied_threshold:
+            logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
             collision_found = True
 
         # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
         # line.
-        costmap[y,x] = 100
+        costmap[y_real,x_real] = 100
 
     return collision_found
 
+
 def is_goal(self, latest_added_node, goal_x, goal_y):
+    # IMPLEMENT THIS NEXT. Rename to "in goal region" or something like that,
+    # but is_goal works, too.
     """
     This method should return whether the latest added node is close enough
     to the goal.
@@ -311,6 +358,7 @@ def is_goal(self, latest_added_node, goal_x, goal_y):
     return False
 
 def find_path(self, tree, latest_added_node):
+    # This is where we'll backtrace through the graph.
     """
     This method returns a path as a list of Nodes connecting the starting point to
     the goal once the latest added node is close enough to the goal
@@ -323,45 +371,6 @@ def find_path(self, tree, latest_added_node):
     """
     path = []
     return path
-
-
-
-# The following methods are needed for RRT* and not RRT
-def cost(self, tree, node):
-    """
-    This method should return the cost of a node
-
-    Args:
-        node (Node): the current node the cost is calculated for
-    Returns:
-        cost (float): the cost value of the node
-    """
-    return 0
-
-def line_cost(self, n1, n2):
-    """
-    This method should return the cost of the straight line between n1 and n2
-
-    Args:
-        n1 (Node): node at one end of the straight line
-        n2 (Node): node at the other end of the straint line
-    Returns:
-        cost (float): the cost value of the line
-    """
-    return 0
-
-def near(self, tree, node):
-    """
-    This method should return the neighborhood of nodes around the given node
-
-    Args:
-        tree ([]): current tree as a list of Nodes
-        node (Node): current node we're finding neighbors for
-    Returns:
-        neighborhood ([]): neighborhood of nodes as a list of Nodes
-    """
-    neighborhood = []
-    return neighborhood
 
 
 
