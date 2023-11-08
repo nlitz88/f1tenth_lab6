@@ -513,14 +513,6 @@ def find_path(self, tree, latest_added_node):
     path = []
     return path
 
-
-
-# NOT SURE YET if this function specifically should return that Path object, or
-# if it just should be a raw array of waypoints along the path--and then a
-# separate function upstream could convert those into Poses and then into a
-# path. Only say that because the function that calls this one will have all
-# that metadata needed to construct a formal message.
-
 # On that note: I think I want to implement this RRT function as being use-case
 # agnostic. I.e., I want this algorithm to work no matter where it is deployed.
 # I.e., this function shouldn't know anything about ROS--it should just be its
@@ -530,8 +522,34 @@ def rrt(costmap: np.ndarray,
         start_point_coords: Tuple[int, int],
         goal_point_coords: Tuple[int, int],
         goal_radius_c: int,
-        new_point_distance: int,
+        new_point_distance_c: int,
         max_iterations: int) -> List[Tuple[int, int]]:
+    """Runs RRT on the provided costmap and other parameters to produce the best
+    path it can from the starting point to the end point within the number of
+    iterations specified. If the algorithm is not able to find a complete path
+    from start to goal, it will return the best path that it was able to plan
+    given its current environmental and operational constraints.
+
+    Args:
+        costmap (np.ndarray): Occupancy grid in the form of a 2D numpy array,
+        indexed using y,x value pairs. I.e., y-values are rows, x-values are
+        columns.
+        start_point_coords (Tuple[int, int]): The coordinates of the starting
+        point in the provided costmap.
+        goal_point_coords (Tuple[int, int]): The coordinates of the goal point
+        in the provided costmap.
+        goal_radius_c (int): The maximum acceptable distance from the goal point
+        a new point can be to be considered "at the goal point." This is
+        provided in the closest number of integer cells.
+        new_point_distance_c (int): The distance (in closest integer number of
+        cells) a new point should be along the line from the nearest in the tree
+        to the recently sampled point.
+        max_iterations (int): 
+
+    Returns:
+        List[Tuple[int, int]]: _description_
+    """
+
     # Start point and goal point are both assumed to be within the bounds of the
     # provided costmap
 
@@ -575,7 +593,7 @@ def rrt(costmap: np.ndarray,
         #    distance new_node_distance away from the nearest tree node.
         new_point_coords = steer(nearest_point=nearest_point_coords,
                                 sampled_point=sampled_point_coords,
-                                new_point_distance=new_point_distance)
+                                new_point_distance=new_point_distance_c)
         # 4. Check to see if the new node's coordinates are within the costmap's
         #    bounds. If it's not within the costmap, then just skip over this
         #    point

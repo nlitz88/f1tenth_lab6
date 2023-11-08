@@ -1,29 +1,16 @@
 #!/usr/bin/env python3
-"""
-This file contains the class definition for tree nodes and RRT
-Before you start, please read: https://arxiv.org/pdf/1105.1186.pdf
-"""
-import numpy as np
-from numpy import linalg as LA
-import math
-
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
-from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PointStamped
-from geometry_msgs.msg import Pose, PoseWithCovarianceStamped
-from geometry_msgs.msg import Point
-from nav_msgs.msg import Odometry
-from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from nav_msgs.msg import OccupancyGrid, Path
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 import tf2_geometry_msgs
 
 from lab6_pkg.rrt_utils import *
-from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid, project_continuous_point_to_grid, occupancy_grid_from_twod_numpy
+from lab6_pkg.laser_costmap_utils import twod_numpy_from_occupancy_grid, project_continuous_point_to_grid
 
 # class def for RRT
 class RRT(Node):
@@ -177,62 +164,25 @@ class RRT(Node):
         #    work with 2D numpy array.
         numpy_occupancy_grid = twod_numpy_from_occupancy_grid(occupancy_grid=costmap)
 
-        # Basically, at this point, run the RRT algorithm given the costmap and
-        # free space.
+        # 6. Run the RRT algorithm on the provided costmap and other parameters
+        #    to obtain its best-effort planned path from the provided start
+        #    position to goal position.
         try:
-            rrt(costmap=numpy_occupancy_grid,
-                start_point=start_position,
-                goal_point=goal_position,
-                goal_radius=self.__goal_radius,
-                max_iterations=self.__max_rrt_iterations,
-                logger=self.get_logger())
+            path: List[Tuple[int, int]] = rrt(costmap=numpy_occupancy_grid,
+                                              start_point=start_position,
+                                              goal_point=goal_position,
+                                              goal_radius=self.__goal_radius,
+                                              max_iterations=self.__max_rrt_iterations)
         except Exception as exc:
             self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
             return
 
-        # For testing the collision function, pass in the goal point as the
-        # sampled point, print out whether it finds a collision or not, and if
-        # there is a new point, plot it on the grid. Plotting on the grid will
-        # be the true sign that the collision checking and steering is working
-        # properly.
-        
-        # From here, we run the RRT loop, where we sample a point, find the
-        # closest node in the tree (euclidean distance) to this node, compute a
-        # new node location on a line from nearest to sampled, check to see if
-        # there's a collision between nearest and new using that same line, then
-        # add that new node to the tree if not. Repeat.
+        # 7. If RRT successfully planned a path from start to goal, take that
+        #    path, package it up into a Path object, and publish it.
+        new_path = Path()
 
-        # NOTE: As a quick test, let's take the transformed goal pose, get the
-        # point inside, project it onto the occupancy 
-        # numpy_occupancy_grid[goal_position[1], goal_position[0]] = 100
-        # numpy_occupancy_grid[start_position[1], start_position[0]] = 100
-
-        # Test steer function using goal point as sampled point and start point
-        # as nearest point.
-        # new_point = steer(nearest_point=(start_position[0], start_position[1]),
-        #                   sampled_point=(goal_position[0], goal_position[1]),
-        #                   new_point_distance=self.__new_point_distance,
-        #                   logger=self.get_logger())
-        # self.get_logger().info(f"New point: {new_point}")
-        # numpy_occupancy_grid[new_point[1], new_point[0]] = 100
-
-        # NOTE: Test the check collision function.
-        # start_position = (start_position[0] + 15, start_position[1])
-        # check_collision(nearest_point=start_position,
-        #                 new_point=goal_position, 
-        #                 costmap=numpy_occupancy_grid,
-        #                 logger=self.get_logger())
-        
-        # 4. Randomly select a cell from the free space discovered in the
-        #    occupancy grid.
-        # sampled_cell = sample(costmap=numpy_occupancy_grid)
-        # self.get_logger().info(f"Sampled cell: {sampled_cell}")
-        # TODO: Test sampled cell by publishing an updated costmap with this
-        # cell Just to visualize.
-        # numpy_occupancy_grid[sampled_cell[1], sampled_cell[0]] = 100
-
-        costmap.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
-        self.__temp_occ_publisher.publish(costmap)
+        # costmap.data = occupancy_grid_from_twod_numpy(numpy_occupancy_grid)
+        # self.__temp_occ_publisher.publish(costmap)
 
 
 def main(args=None):
