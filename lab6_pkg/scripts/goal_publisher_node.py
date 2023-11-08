@@ -70,13 +70,16 @@ class GoalPublisher(Node):
 
         # This functionality is implemented in the get_next_target_point
         # function.
-        target_pose = get_next_target_point(current_pose=pose_msg.pose, 
-                                            path=self.__path,
-                                            lookahead_distance_m=lookahead_distance_m)
+        try:
+            target_pose = get_next_target_point(current_pose=pose_msg, 
+                                                path=self.__path,
+                                                lookahead_distance_m=lookahead_distance_m)
+        except Exception as exc:
+            self.get_logger.error(f"Failed to get next target pose.\nException: {str(exc)}")
+            return
         
         # 3. Publish the selected target pose as the next goal pose.
         self.__goal_publisher.publish(target_pose)
-        self.get_logger().info(f"Published new goal pose at {(target_pose.pose.position.x, target_pose.pose.position.y)}")
 
         # REMEMBER: This node's lookahead distance PROBABLY needs to be 2x as
         # long as pure-pursuits, as pure pursuit is going to be following RRT's
