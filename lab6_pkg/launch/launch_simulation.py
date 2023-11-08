@@ -60,7 +60,7 @@ def generate_launch_description():
     # Add the launch_ros "Node" actions we created.
     ld.add_action(pose_publisher_node)
     ld.add_action(path_file_publisher_node)
-    # ld.add_action(pure_pursuit_node)
+    ld.add_action(pure_pursuit_node)
     ld.add_action(laser_costmap_node)
     ld.add_action(rrt_node)
     ld.add_action(goal_publisher_node)
