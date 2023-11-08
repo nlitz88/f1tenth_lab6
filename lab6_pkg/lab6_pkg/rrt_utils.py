@@ -601,7 +601,7 @@ def rrt(costmap: np.ndarray,
             continue
     
         # 5. If it is within the costmap, also check to see if there are any
-        #    abstacles along the line from the nearest node to this newest node,
+        #    obstacles along the line from the nearest node to this newest node,
         #    or if the newest node just falls on top of occupied space. If there
         #    is a collision, just move on and skip over this point.
         if collision(nearest_point=nearest_point_coords,
