@@ -426,24 +426,25 @@ def check_collision(nearest_point: Tuple[int, int],
 def in_goal_region(new_point: Tuple[int, int],
                    goal_point: Tuple[int, int],
                    goal_radius_c: int) -> bool:
-    pass
-    
-
-def is_goal(self, latest_added_node, goal_x, goal_y):
-    # IMPLEMENT THIS NEXT. Rename to "in goal region" or something like that,
-    # but is_goal works, too.
-    """
-    This method should return whether the latest added node is close enough
-    to the goal.
+    """Returns whether the provided new_point falls within the goal region,
+    making it close enough to consider being at the goal point.
 
     Args:
-        latest_added_node (Node): latest added node on the tree
-        goal_x (double): x coordinate of the current goal
-        goal_y (double): y coordinate of the current goal
+        new_point (Tuple[int, int]): The x,y grid position being evaluated
+        against the goal region.
+        goal_point (Tuple[int, int]): The x,y grid position of the goal
+        position. 
+        goal_radius_c (int): The radius (in # of cells) that the new_point must
+        approximately be within in order to be considered within the goal
+        region.
+
     Returns:
-        close_enough (bool): true if node is close enoughg to the goal
+        bool: True if the new point is close enough to the goal (I.e., it falls
+        within goal_radius_c of the goal_point), False if not.
     """
-    return False
+    
+    close_enough = False
+
 
 def find_path(self, tree, latest_added_node):
     # This is where we'll backtrace through the graph.
