@@ -90,5 +90,81 @@ class TestInGoalRegion(unittest.TestCase):
         result = in_goal_region(new_point, goal_point, goal_radius)
         self.assertTrue(result)
 
+class TestTreeBacktrace(unittest.TestCase):
+
+    def test_backtrace_single_node(self):
+        # Create a tree with a single root node.
+        tree = Tree((0, 0))
+        
+        # The backtrace for the root node itself should be the root's coordinates.
+        path = tree.backtrace(0)
+        expected_path = [(0, 0)]
+        
+        self.assertEqual(path, expected_path)
+
+    def test_backtrace_two_nodes(self):
+        # Create a tree with two nodes.
+        tree = Tree((0, 0))
+        child_node_index = tree.add_node(0, (1, 1))
+        
+        # The backtrace for the child node should include both nodes' coordinates.
+        path = tree.backtrace(child_node_index)
+        expected_path = [(0, 0), (1, 1)]
+        
+        self.assertEqual(path, expected_path)
+
+    def test_backtrace_complex_tree(self):
+        # Create a more complex tree.
+        tree = Tree((0, 0))
+        child1_index = tree.add_node(0, (1, 1))
+        child2_index = tree.add_node(0, (1, -1))
+        child3_index = tree.add_node(child1_index, (2, 2))
+        child4_index = tree.add_node(child2_index, (2, -2))
+        
+        # Test backtrace for child3_index, which should include coordinates from root to child3.
+        path = tree.backtrace(child3_index)
+        expected_path = [(0, 0), (1, 1), (2, 2)]
+        
+        self.assertEqual(path, expected_path)
+
+    def test_backtrace_multiple_levels(self):
+        # Create a tree with multiple levels.
+        tree = Tree((0, 0))
+        child1_index = tree.add_node(0, (1, 1))
+        child2_index = tree.add_node(0, (1, -1))
+        child3_index = tree.add_node(child1_index, (2, 2))
+        child4_index = tree.add_node(child1_index, (2, 1))
+        child5_index = tree.add_node(child2_index, (2, -2))
+        
+        # Test backtrace for child4_index, which should include coordinates from root to child4.
+        path = tree.backtrace(child4_index)
+        expected_path = [(0, 0), (1, 1), (2, 1)]
+        
+        self.assertEqual(path, expected_path)
+
+    # def test_backtrace_goal_not_in_tree(self):
+    #     # Create a tree with a single root node.
+    #     tree = Tree((0, 0))
+        
+    #     # Try to backtrace to a node that is not in the tree (index 1).
+    #     path = tree.backtrace(1)
+        
+    #     # The result should be an empty list since the goal node is not in the tree.
+    #     expected_path = []
+        
+    #     self.assertEqual(path, expected_path)
+
+    def test_backtrace_root_as_goal(self):
+        # Create a tree with a single root node.
+        tree = Tree((0, 0))
+        
+        # Try to backtrace to the root node itself (index 0).
+        path = tree.backtrace(0)
+        
+        # The result should be a list containing only the root's coordinates.
+        expected_path = [(0, 0)]
+        
+        self.assertEqual(path, expected_path)
+
 if __name__ == "__main__":
     unittest.main()

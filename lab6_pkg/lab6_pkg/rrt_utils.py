@@ -31,7 +31,7 @@ class Tree:
             int: The index of the new node to access both the parallel arrays
             that comprise the tree.
         """
-        self.__node_adjacency_lists([])
+        self.__node_adjacency_lists.append([])
         self.__node_coordinates.append(node_position)
         return len(self.__node_coordinates) - 1
     
