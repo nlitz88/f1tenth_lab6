@@ -442,9 +442,39 @@ def in_goal_region(new_point: Tuple[int, int],
         bool: True if the new point is close enough to the goal (I.e., it falls
         within goal_radius_c of the goal_point), False if not.
     """
-    
-    close_enough = False
+    # One idea (probaly the most "correct"): Compute compute the euclidean
+    # distance between the new point and the goal point (in # of cells), and
+    # compare that distance to the goal_radius_c. If it's less than or equal to
+    # that distance, than it's good enough.
 
+    # Note, though, that the above requires a floating point operation. What
+    # would be faster is if we just made the goal region square and used the
+    # same logic as above when checking if a point is within the costmap bounds.
+    # I.e., just have to check if the new point is within the square with radius
+    # goal_radius_c around the goal position. Going to opt for this approach to
+    # start for the sake of simplicity.
+
+    # Compute the boundary values for the goal square using the goal point and
+    # the goal radius.
+    goal_point_x, goal_point_y = goal_point
+    # NOTE: The goal square's boundary values CAN fall outside of the costmap,
+    # as this function only cares about proximity. I.e., out of bounds
+    # coordinates are handled outside the scope of this function.
+    goal_square_x_max = goal_point_x + goal_radius_c
+    goal_square_x_min = goal_point_x - goal_radius_c
+    goal_square_y_max = goal_point_y + goal_radius_c
+    goal_square_y_min = goal_point_y - goal_radius_c
+
+    # Determine if the new_point falls within the goal_square. Or, rather,
+    # return False if either of the new point coordinates fall outside of their
+    # respective boundaries, return True if both coordinates are within the goal
+    # square boundaries. 
+    new_point_x, new_point_y = new_point
+    if new_point_x < goal_square_x_min or new_point_x > goal_square_x_max:
+        return False
+    if new_point_y < goal_square_y_min or new_point_y > goal_square_y_max:
+        return False
+    return True
 
 def find_path(self, tree, latest_added_node):
     # This is where we'll backtrace through the graph.
