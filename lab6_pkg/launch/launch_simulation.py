@@ -49,7 +49,7 @@ def generate_launch_description():
         parameters=[simulation_params],
         remappings=[("costmap", "laser_local_costmap"),
                     ("pose", "ego_racecar/pose"),
-                    ("path", "rrt_local_path")]
+                    ("path", "rrt_path")]
     )
     goal_publisher_node = Node(
         package="lab6_pkg",
@@ -57,7 +57,7 @@ def generate_launch_description():
         parameters=[simulation_params],
         remappings=[("costmap", "laser_local_costmap"),
                     ("pose", "ego_racecar/pose"),
-                    ("path", "rrt_local_path")]
+                    ("path", "rrt_path")]
     )
     # Add the launch_ros "Node" actions we created.
     ld.add_action(pose_publisher_node)
@@ -65,6 +65,7 @@ def generate_launch_description():
     # ld.add_action(pure_pursuit_node)
     ld.add_action(laser_costmap_node)
     ld.add_action(rrt_node)
+    ld.add_action(goal_publisher_node)
 
     # Return the newly created launch description.
     return ld

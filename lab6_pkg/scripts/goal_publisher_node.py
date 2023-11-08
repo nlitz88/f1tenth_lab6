@@ -59,6 +59,7 @@ class GoalPublisher(Node):
         #    and max using some gain specified as a parameter given the current
         #    longitudinal velocity of the vehicle (get this from the pose's
         #    twist component).
+        lookahead_distance_m = self.__lookahead_distance_m
 
         # 2. The vehicle pose is the starting point. Just like pure pursuit,
         #    first find the closest point. Then from there, scan all the rest of
@@ -70,7 +71,10 @@ class GoalPublisher(Node):
         # function.
         target_pose = get_next_target_point(current_pose=pose_msg.pose, 
                                             path=self.__path,
-                                            lookahead_distance_m=self.__lookahead_distance_m)
+                                            lookahead_distance_m=lookahead_distance_m)
+        
+        # 3. Publish the selected target pose as the next goal pose.
+        self.__goal_publisher.publish(target_pose)
 
         # REMEMBER: This node's lookahead distance PROBABLY needs to be 2x as
         # long as pure-pursuits, as pure pursuit is going to be following RRT's
@@ -80,6 +84,3 @@ class GoalPublisher(Node):
         # Also note: This node publishes goal points in the same frame as the
         # path received. I.e., this exclusively operates in the frame that the
         # subscribed path is in.
-        
-        pass
-    
