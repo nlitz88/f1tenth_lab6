@@ -185,6 +185,19 @@ def sample(free_space: np.ndarray) -> Tuple[int, int]:
     # 3. Return the coordinates at that index.
     return tuple(free_space[random_index])
 
+def euclidean_distance(vector_a: np.ndarray, vector_b: np.ndarray) -> float:
+    """Tiny helper function to compute euclidean distance using numpy.
+    Fast method found on
+    https://stackoverflow.com/questions/1401712/how-can-the-euclidean-distance-be-calculated-with-numpy
+    
+    Args:
+        row (np.ndarray): numpy array row.
+
+    Returns:
+        float: The euclidean distance between vector_a and vector_b.
+    """
+    return np.linalg.norm(vector_a-vector_b)
+
 def nearest_coord(node_coordinates: np.ndarray, sampled_point: np.ndarray) -> int:
     """Returns the index of the node in the node_coordinates array with the
     smallest euclidean distance.
@@ -199,9 +212,9 @@ def nearest_coord(node_coordinates: np.ndarray, sampled_point: np.ndarray) -> in
         int: The index of the node in node_coordinates with the smallest
         euclidean distance to the sampled_point.
     """
-    return np.argmin(np.linalg.norm(node_coordinates-sampled_point))
+    return np.argmin(np.apply_along_axis(euclidean_distance, 1, node_coordinates, sampled_point))
 
-def nearest(tree: Tree, sampled_point: Tuple[int, int]) -> int:
+def nearest(logger, tree: Tree, sampled_point: Tuple[int, int]) -> int:
     """Returns the index of the node in the provided tree whose grid position is
     nearest to the provided sampled point.
 
@@ -215,8 +228,10 @@ def nearest(tree: Tree, sampled_point: Tuple[int, int]) -> int:
         point.
     """
     node_coordinates = tree.get_node_coordinates_array()
+    logger.info(f"Node coordinates array from NEAREST: {node_coordinates}")
     nearest_node_index = nearest_coord(node_coordinates=node_coordinates,
                                        sampled_point=sampled_point)
+    logger.info(f"Node index with the smallest distance from the sampled point: {nearest_node_index}")
     return nearest_node_index
 
 def steer(nearest_point: Tuple[int, int],
@@ -518,7 +533,8 @@ def find_path(self, tree, latest_added_node):
 # I.e., this function shouldn't know anything about ROS--it should just be its
 # own independent function that we call FROM the rrt node to run RRT on a
 # provided 2D array/costmap--but nothing else.
-def rrt(costmap: np.ndarray,
+def rrt(logger,
+        costmap: np.ndarray,
         start_point_coords: Tuple[int, int],
         goal_point_coords: Tuple[int, int],
         goal_radius_c: int,
@@ -564,6 +580,7 @@ def rrt(costmap: np.ndarray,
     # here, therefore, I think that should be one of this function's
     # "initialization" steps.
     free_space = free_space_from_costmap(costmap=costmap)
+    logger.info(f"Free spaces to sample from: {len(free_space)}")
     
     # Variables to control iteration and how we backtrace our path.
     goal_reached = False
@@ -585,21 +602,25 @@ def rrt(costmap: np.ndarray,
         
         # 1. Randomly sample a point in free space.
         sampled_point_coords = sample(free_space=free_space)
+        logger.info(f"Sampled point {sampled_point_coords}")
         # 2. Find the point in the tree that is closest to the sampled point.
-        nearest_node_to_sample = nearest(tree=rrt_tree, sampled_point=sampled_point_coords)
+        nearest_node_to_sample = nearest(logger, tree=rrt_tree, sampled_point=sampled_point_coords)
         nearest_point_coords = rrt_tree.get_node_coordinates(node_index=nearest_node_to_sample)
+        logger.info(f"Nearest node in tree to sampled point: Node @ index {nearest_node_to_sample} with coords {nearest_point_coords}")
         # 3. Use the steer function to determine the location of a node along
         #    the line from from the nearest tree node to the sampled node, some
         #    distance new_node_distance away from the nearest tree node.
         new_point_coords = steer(nearest_point=nearest_point_coords,
                                 sampled_point=sampled_point_coords,
                                 new_point_distance=new_point_distance_c)
+        logger.info(f"New point between nearest and sampled: {new_point_coords}")
         # 4. Check to see if the new node's coordinates are within the costmap's
         #    bounds. If it's not within the costmap, then just skip over this
         #    point
         if not point_in_costmap(point=new_point_coords, costmap=costmap):
+            logger.warning(f"New point {new_point_coords} was not in costmap")
             continue
-    
+        
         # 5. If it is within the costmap, also check to see if there are any
         #    obstacles along the line from the nearest node to this newest node,
         #    or if the newest node just falls on top of occupied space. If there
@@ -607,6 +628,7 @@ def rrt(costmap: np.ndarray,
         if collision(nearest_point=nearest_point_coords,
                      new_point=new_point_coords,
                      costmap=costmap):
+            logger.warning(f"Collision encountered between neareset point {nearest_point_coords} and new point {new_point_coords}.")
             continue
 
         # 6. If the point is within the costmap and there aren't any obstacles
@@ -614,6 +636,7 @@ def rrt(costmap: np.ndarray,
         #    as the child of teh nearest node.
         new_node_index = rrt_tree.add_node(parent_index=nearest_node_to_sample,
                                            new_node_position=new_point_coords)
+        logger.info(f"New node added to tree with parent index {nearest_node_to_sample} and index {new_node_index} and coords {new_point_coords}")
 
         # 7. Finally, check to see if the point falls within the goal region. If
         #    so, then the new_node_index is our goal node, the path will be
@@ -621,6 +644,7 @@ def rrt(costmap: np.ndarray,
         if in_goal_region(new_point=new_point_coords,
                           goal_point=goal_point_coords,
                           goal_radius_c=goal_radius_c):
+            logger.warning(f"New node was found to be in the goal region!")
             goal_reached = True
             goal_node_index = new_node_index
         # Increment iteration count.
@@ -642,6 +666,7 @@ def rrt(costmap: np.ndarray,
     # closest to another node.
     if not goal_reached:
         goal_node_index = nearest(tree=rrt_tree, sampled_point=goal_point_coords)
+        logger.warning(f"Goal not reached, the closest node to the goal ended with in the tree was {goal_node_index}")
 
     # NOTE: I think in either of the above cases, though, we're coming up with
     # some node to be our goal node--whether it's a true goal node in proximity

@@ -20,7 +20,7 @@ car_pose_publisher:
 
 laser_costmap:
   ros__parameters:
-    height_c: 100
+    height_c: 50
     width_c: 75
     resolution_m_c: 0.05
     splat_radius: 4
@@ -28,6 +28,6 @@ laser_costmap:
 rrt:
   ros__parameters:
     path_frame: "map"
-    goal_radius_m: 0.20
+    goal_radius_m: 0.25
     new_point_distance_m: 0.25
-    max_rrt_iterations: 200
+    max_rrt_iterations: 1000

@@ -165,12 +165,14 @@ class RRT(Node):
         #    to obtain its best-effort planned path from the provided start
         #    position to goal position.
         try:
-            path = rrt(costmap=numpy_occupancy_grid,
+            path = rrt(self.get_logger(),
+                       costmap=numpy_occupancy_grid,
                        start_point_coords=start_position,
                        goal_point_coords=goal_position,
                        goal_radius_c=goal_radius_c,
                        new_point_distance_c=new_point_distance_c,
                        max_iterations=self.__max_rrt_iterations)
+            self.get_logger().info(f"Path returned by RRT: {path}")
         except Exception as exc:
             self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc.with_traceback())}")
             return
