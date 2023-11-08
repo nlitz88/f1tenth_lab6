@@ -623,6 +623,8 @@ def rrt(costmap: np.ndarray,
                           goal_radius_c=goal_radius_c):
             goal_reached = True
             goal_node_index = new_node_index
+        # Increment iteration count.
+        iteration_count += 1
 
     # If the goal node HAS BEEN REACHED, then call the backtrace function on the
     # tree to get the path from the root of the tree (the starting position) to

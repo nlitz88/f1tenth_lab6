@@ -171,7 +171,6 @@ class RRT(Node):
                        goal_radius_c=goal_radius_c,
                        new_point_distance_c=new_point_distance_c,
                        max_iterations=self.__max_rrt_iterations)
-            
         except Exception as exc:
             self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc.with_traceback())}")
             return
