@@ -30,4 +30,4 @@ rrt:
     path_frame: "map"
     goal_radius_m: 0.25
     new_point_distance_m: 0.25
-    max_rrt_iterations: 1000
+    max_rrt_iterations: 200

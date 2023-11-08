@@ -383,6 +383,8 @@ def collision(nearest_point: Tuple[int, int],
             y_real = y - 2*(y-y1)
         else:
             y_real = y
+        x_real = np.clip(x_real, 0, costmap.shape[1]-1)
+        y_real = np.clip(y_real, 0, costmap.shape[0]-1)
         if costmap[y_real, x_real] >= occupied_threshold:
             collision_found = True
         # Compute the adjusted slope (adjusted to avoid floating point arithmetic
@@ -416,6 +418,8 @@ def collision(nearest_point: Tuple[int, int],
                 y_real = y - 2*(y-y1)
             else:
                 y_real = y
+            x_real = np.clip(x_real, 0, costmap.shape[1]-1)
+            y_real = np.clip(y_real, 0, costmap.shape[0]-1)
             # 4. Check for collision at the interpretted position.
             if costmap[y_real, x_real] >= occupied_threshold:
                 collision_found = True
@@ -430,6 +434,8 @@ def collision(nearest_point: Tuple[int, int],
             y_real = y - 2*(y-y1)
         else:
             y_real = y
+        x_real = np.clip(x_real, 0, costmap.shape[1]-1)
+        y_real = np.clip(y_real, 0, costmap.shape[0]-1)
         if costmap[y_real, x_real] >= occupied_threshold:
             collision_found = True
         # Compute the adjusted slope (adjusted to avoid floating point arithmetic
@@ -463,6 +469,8 @@ def collision(nearest_point: Tuple[int, int],
                 y_real = y - 2*(y-y1)
             else:
                 y_real = y
+            x_real = np.clip(x_real, 0, costmap.shape[1]-1)
+            y_real = np.clip(y_real, 0, costmap.shape[0]-1)
             # 4. Check for collision at the interpretted position.
             if costmap[y_real, x_real] >= occupied_threshold:
                 collision_found = True
