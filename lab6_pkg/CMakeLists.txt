@@ -54,6 +54,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/rrt_node.py
   scripts/laser_costmap_node.py
+  scripts/goal_publisher_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
