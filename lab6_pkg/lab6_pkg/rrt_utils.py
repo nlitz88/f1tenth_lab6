@@ -87,10 +87,60 @@ class Tree:
         """
         return np.array(self.__node_coordinates)
     
-    def backtrace(self, start_node_index: int, goal_node_index: int) -> List[int]:
-        # TODO: Implement this function to iterate through the graph and return
-        # the path to the goal node.
-        pass
+    def backtrace(self, goal_node_index: int) -> List[Tuple[int, int]]:
+        """Traverses the tree and returns a path from the root node to the
+        specified goal node index. Specifically, it returns a list position
+        Tuples, where each comes from the corresponding node.
+
+        Args:
+            goal_node_index (int): Goal node's index in the tree.
+
+        Returns:
+            List[Tuple[int, int]]: List of position tuples that correspond with
+            the nodes on the path from the root node to the goal node.
+        """
+        # One idea: Create a "prev" array, like we'd use for Dijkstra's or A*.
+        # This is basically just an additional parallel array that we use to
+        # track, for each node that we visit, the node that we came from to get
+        # to this node.
+        node_previous: List[int] = [-1]*len(self.__node_coordinates)
+        # NOTE: Don't need a parallel "visited" array, as this is a tree, a
+        # special case of a graph where there are no cycles. Therefore, we'll
+        # never land on / visit a node more than once.
+        # Initialize a new queue for BFS and start exploring.
+        root_node_index = 0
+        node_previous[root_node_index] = root_node_index
+        visit_queue = deque([root_node_index])
+        # Search through tree breadth first setting the previous of each node
+        # you visit until you reach the goal node. When you reach the goal node,
+        # trace a back back up to the root.
+        explored_to_goal = False
+        while len(visit_queue) > 0 and not explored_to_goal:
+            current_node_index = visit_queue.popleft()
+            # Check if the current node is the goal node. If so, then it will
+            # have its previous set, and a path can be traced back to the root
+            # from this node.
+            if current_node_index == goal_node_index:
+                explored_to_goal = True
+            # If not the goal node, then we'll want to add all the children of
+            # this node to keep exploring. Add the current node index as each of
+            # its children's node's previous. Then, push the child node to the
+            # end of the queue to be visited next.
+            else:
+                for child_index in self.__node_adjacency_lists[current_node_index]:
+                    node_previous[child_index] = current_node_index
+                    visit_queue.append(child_index)
+        
+        # Once  we've found the goal, then we can trace back from the goal to
+        # the root using the node_previous array.
+        path_coords = deque()
+        current_node_index = goal_node_index
+        path_coords.appendleft(self.__node_coordinates[current_node_index])
+        while current_node_index != root_node_index:
+            # Set the current node index to the previous node of this node.
+            current_node_index = node_previous[current_node_index]
+            path_coords.appendleft(self.__node_coordinates[current_node_index])
+        return list(path_coords)
 
 def free_space_from_costmap(costmap: np.ndarray,
                             occupied_threshold: Optional[int] = 100) -> np.ndarray:
@@ -162,23 +212,6 @@ def nearest(tree: Tree, sampled_point: Tuple[int, int]) -> int:
     nearest_node_index = nearest_coord(node_coordinates=node_coordinates,
                                        sampled_point=sampled_point)
     return nearest_node_index
-
-def steer_and_check(nearest_point: Tuple[int, int],
-                    sampled_point: Tuple[int, int],
-                    costmap: np.ndarray,
-                    new_point_distance: float) -> Tuple[int, int]:
-    
-    # Draw a line from nearest point from sampled point using Bresenham's line
-    # algorithm. Walk along the the points in that line and stop if there is an
-    # occupied cell along the line. If an occupied cell is not encountered.
-    pass
-    # Could also implement this between those two functions where I just first
-    # generate what the new point must be using the angle and specified
-    # distance.
-    
-
-    # Then, in the check collision function, I could 
-
 
 def steer(nearest_point: Tuple[int, int],
           sampled_point: Tuple[int, int],
@@ -583,7 +616,6 @@ def rrt(costmap: np.ndarray,
     # hasn't truly reached the end. This way, your path tracker still has a path
     # to track, but it's a safe path that it should be able to observe the end
     # of and hopefully stop in time.
-
     else:
         pass
 
