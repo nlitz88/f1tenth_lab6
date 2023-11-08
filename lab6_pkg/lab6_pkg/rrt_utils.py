@@ -612,7 +612,8 @@ def rrt(costmap: np.ndarray,
         # 6. If the point is within the costmap and there aren't any obstacles
         #    in between it and the nearest node, then we can add it to the tree
         #    as the child of teh nearest node.
-        new_node_index = rrt_tree.add_node(parent_index=nearest_node_to_sample)
+        new_node_index = rrt_tree.add_node(parent_index=nearest_node_to_sample,
+                                           new_node_position=new_point_coords)
 
         # 7. Finally, check to see if the point falls within the goal region. If
         #    so, then the new_node_index is our goal node, the path will be
