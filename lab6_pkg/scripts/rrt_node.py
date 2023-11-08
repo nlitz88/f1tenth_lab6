@@ -179,18 +179,16 @@ class RRT(Node):
 
         # Basically, at this point, run the RRT algorithm given the costmap and
         # free space.
-        start_grid_position = GridPosition(x=start_position[0], y=start_position[1])
-        goal_grid_position = GridPosition(x=goal_position[0], y=goal_position[1])
-        # try:
-        #     rrt(costmap=numpy_occupancy_grid,
-        #         start_point=start_grid_position,
-        #         goal_point=goal_grid_position,
-        #         goal_radius=self.__goal_radius,
-        #         max_iterations=self.__max_rrt_iterations,
-        #         logger=self.get_logger())
-        # except Exception as exc:
-        #     self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
-        #     return
+        try:
+            rrt(costmap=numpy_occupancy_grid,
+                start_point=start_position,
+                goal_point=goal_position,
+                goal_radius=self.__goal_radius,
+                max_iterations=self.__max_rrt_iterations,
+                logger=self.get_logger())
+        except Exception as exc:
+            self.get_logger().warning(f"Failed to complete path planning using RRT.\nException: {str(exc)}")
+            return
 
         # For testing the collision function, pass in the goal point as the
         # sampled point, print out whether it finds a collision or not, and if
@@ -219,7 +217,7 @@ class RRT(Node):
         # numpy_occupancy_grid[new_point[1], new_point[0]] = 100
 
         # NOTE: Test the check collision function.
-        start_position = (start_position[0] + 15, start_position[1])
+        # start_position = (start_position[0] + 15, start_position[1])
         # check_collision(nearest_point=start_position,
         #                 new_point=goal_position, 
         #                 costmap=numpy_occupancy_grid,

@@ -3,8 +3,6 @@ from typing import List, Tuple, Optional
 import numpy as np
 from collections import deque
 
-from lab6_pkg.laser_costmap_utils import GridPosition
-
 class Tree:
     """Tree implementation based on parallel arrays and adjacency lists.
     """
@@ -490,19 +488,18 @@ def find_path(self, tree, latest_added_node):
 # own independent function that we call FROM the rrt node to run RRT on a
 # provided 2D array/costmap--but nothing else.
 def rrt(costmap: np.ndarray,
-        start_point: GridPosition,
-        goal_point: GridPosition,
+        start_point_coords: Tuple[int, int],
+        goal_point_coords: Tuple[int, int],
         goal_radius_c: int,
         new_point_distance: int,
-        max_iterations: int,
-        logger) -> List[GridPosition]:
+        max_iterations: int) -> List[Tuple[int, int]]:
     # Start point and goal point are both assumed to be within the bounds of the
     # provided costmap
 
     # INITITIALIZATION STEPS
     # Create a new tree instance and initialize it with the root equal to the
     # starting point.
-    rrt_tree = Tree(root_position=(start_point.x, start_point.y))
+    rrt_tree = Tree(root_position=start_point_coords)
 
     # I also think that this function should be the one responsible for
     # extracting that free space array from the costmap internally, as its not
@@ -522,7 +519,6 @@ def rrt(costmap: np.ndarray,
     if free_space.shape[0] == 0:
         # Provide some sort of warning??
         goal_reached = True
-        goal_node_index = 0
 
     # RRT LOOP STEPS
     # Loop for a finite number of times or until a path to the goal region has
@@ -564,32 +560,21 @@ def rrt(costmap: np.ndarray,
         # 7. Finally, check to see if the point falls within the goal region. If
         #    so, then the new_node_index is our goal node, the path will be
         #    backtraced for this new node, and RRT has finished planning a path.
-        goal_point_coords = (goal_point.x, goal_point.y)
         if in_goal_region(new_point=new_point_coords,
                           goal_point=goal_point_coords,
                           goal_radius_c=goal_radius_c):
             goal_reached = True
             goal_node_index = new_node_index
 
-        # Check for a collision along the line from the nearest point in the
-        # tree to the sampled point to determine if we can add a new node in
-        # the direction of that node.
-        # NOTE: as an optimization for later, we could instead check to see if
-        # there is a collision within some fixed distance. If there isn't a
-        # collision within a certain distance (that we could perhaps check first
-        # with the underlying function), then we can just make the new node at
-        # that distance along that line. For the sake of simplicity and time,
-        # I think I may just do this to start. I.e., sorta morphing the check
-        # collision and new point in one. But really, we're just checking for a
-        # collision within the distance that we'd make that new node at.
+    # In either case below, we're going to return a path, which will start as a
+    # list of Tuple x,y positions.
+    path = List[Tuple[int, int]]
 
-        # TODO: Need to call a function here that checks to see if the
-        # point/grid position returned by steer is actually within the bounds of
-        # the costmap.
-
-
-        # DEBUG
-        goal_reached = True
+    # If the goal node HAS BEEN REACHED, then call the backtrace function on the
+    # tree to get the path from the root of the tree (the starting position) to
+    # the goal node (the point in the goal region).
+    if goal_reached:
+        pass
 
     # If the goal HAS NOT been reached by the end of the iterations, I think the
     # safest action to take is to just find the node in the tree that is CLOSEST
@@ -598,5 +583,12 @@ def rrt(costmap: np.ndarray,
     # hasn't truly reached the end. This way, your path tracker still has a path
     # to track, but it's a safe path that it should be able to observe the end
     # of and hopefully stop in time.
+
+    else:
+        pass
+
+    
+    # Then, from either of the above, return the list of Tuple positions.
+
 
     return []
