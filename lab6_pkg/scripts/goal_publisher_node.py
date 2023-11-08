@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
+
+from lab6_pkg.goal_publisher_utils import get_next_target_point
 
 class GoalPublisher(Node):
     """Node class dedicated to examining a "global," course path and deciding
@@ -28,16 +29,16 @@ class GoalPublisher(Node):
         self.__path = None
 
         # Create subscriber for vehicle pose.
-        self.__vehicle_pose_subscriber = self.create_subscription(msg_type=PoseStamped,
+        self.__vehicle_pose_subscriber = self.create_subscription(msg_type=PoseWithCovarianceStamped,
                                                                   topic="pose",
                                                                   callback=self.__pose_callback,
                                                                   qos_profile=10)
-
+        
         # Create publisher for goal point.
         self.__goal_publisher = self.create_publisher(msg_type=PoseStamped,
                                                       topic="goal_pose",
                                                       qos_profile=10)
-
+        
     def __path_callback(self, path_msg: Path) -> None:
         """Simple path callback to store most recently received Path.
 
@@ -46,13 +47,13 @@ class GoalPublisher(Node):
         """
         self.__path = path_msg
     
-    def __pose_callback(self, pose_msg: PoseStamped) -> None:
+    def __pose_callback(self, pose_msg: PoseWithCovarianceStamped) -> None:
         """Callback where, upon receiving the most recent vehicle pose, the next
         point in the most recently received global path is picked as the next
         goal point.
 
         Args:
-            pose_msg (PoseStamped): _description_
+            pose_msg (PoseWithCovarianceStamped): Most recent vehicle pose.
         """
         # 1. Optionally compute the current lookahead distance between some min
         #    and max using some gain specified as a parameter given the current
@@ -63,11 +64,22 @@ class GoalPublisher(Node):
         #    first find the closest point. Then from there, scan all the rest of
         #    the points from that one that are at least one lookahead distance
         #    away. Don't remember how I solved the issue of being at the end of
-        #    the path, maybe it was fine?
+        #    the path, maybe it was fine? 
 
-        # REMEMBER: This node's lookahead distnace PROBABLY needs to be 2x as
+        # This functionality is implemented in the get_next_target_point
+        # function.
+        target_pose = get_next_target_point(current_pose=pose_msg.pose, 
+                                            path=self.__path,
+                                            lookahead_distance_m=self.__lookahead_distance_m)
+
+        # REMEMBER: This node's lookahead distance PROBABLY needs to be 2x as
         # long as pure-pursuits, as pure pursuit is going to be following RRT's
         # path. Therefore, RRT should be planning ahead of what the path tracker
         # is following, right?
+
+        # Also note: This node publishes goal points in the same frame as the
+        # path received. I.e., this exclusively operates in the frame that the
+        # subscribed path is in.
+        
         pass
     

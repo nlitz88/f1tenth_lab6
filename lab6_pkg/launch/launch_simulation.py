@@ -51,6 +51,14 @@ def generate_launch_description():
                     ("pose", "ego_racecar/pose"),
                     ("path", "rrt_local_path")]
     )
+    goal_publisher_node = Node(
+        package="lab6_pkg",
+        executable="rrt_node.py",
+        parameters=[simulation_params],
+        remappings=[("costmap", "laser_local_costmap"),
+                    ("pose", "ego_racecar/pose"),
+                    ("path", "rrt_local_path")]
+    )
     # Add the launch_ros "Node" actions we created.
     ld.add_action(pose_publisher_node)
     ld.add_action(path_file_publisher_node)

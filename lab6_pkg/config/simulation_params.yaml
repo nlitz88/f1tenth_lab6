@@ -31,3 +31,7 @@ rrt:
     new_point_distance_m: 0.25
     max_rrt_iterations: 200
     path_frame: "map"
+
+goal_publisher:
+  ros__parameters:
+    lookahead_distance_m: 4.0
