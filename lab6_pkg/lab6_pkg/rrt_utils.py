@@ -216,7 +216,34 @@ def steer(nearest_point: Tuple[int, int],
     return (x_new, y_new)
 
 def point_in_costmap(point: Tuple[int, int], costmap: np.ndarray) -> bool:
-    pass
+    """Returns True if the provided point falls within the boundaries of the
+    costmap, False if not.
+
+    Args:
+        point (Tuple[int, int]): The x,y grid position that will be checked. 
+        costmap (np.ndarray): The 2D occupancy grid we'll be checking if point
+        is in or not. This function is expecting that the occupancy grid is laid
+        out such that each row corresponds with a different y value, each column
+        corresponds to a different x value.
+
+    Returns:
+        bool: True if the point is within the bounds of the costmap, False if
+        not.
+    """
+    point_x, point_y = point
+    min_x = 0
+    max_x = costmap.shape[1] - 1
+    min_y = 0
+    max_y = costmap.shape[0] - 1
+    # If the point's x coordinate is out of bounds.
+    if point_x < min_x or point_x > max_x:
+        return False
+    # If the point's y coordinate is out of bounds.
+    if point_y < min_y or point_y > max_y:
+        return False
+    # If neither of the above conditions is violated, then the point must be in
+    # bounds--return True.
+    return True
 
 def check_collision(nearest_point: Tuple[int, int],
                     new_point: Tuple[int, int], 
@@ -396,6 +423,11 @@ def check_collision(nearest_point: Tuple[int, int],
 
     return collision_found
 
+def in_goal_region(new_point: Tuple[int, int],
+                   goal_point: Tuple[int, int],
+                   goal_radius_c: int) -> bool:
+    pass
+    
 
 def is_goal(self, latest_added_node, goal_x, goal_y):
     # IMPLEMENT THIS NEXT. Rename to "in goal region" or something like that,

@@ -44,5 +44,34 @@ class TestSample(unittest.TestCase):
         result = sample(free_space)
         self.assertTrue(result in [(0, 0), (1, 1), (2, 2), (3, 3)])
 
+class TestPointInCostmap(unittest.TestCase):
+
+    def test_point_within_costmap(self):
+        # Create a 3x3 costmap for testing
+        costmap = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
+        point = (1, 1)  # This point is within the costmap
+        result = point_in_costmap(point, costmap)
+        self.assertTrue(result)
+
+    def test_point_outside_costmap(self):
+        # Create a 3x3 costmap for testing
+        costmap = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
+        point = (-1, 1)  # This point is outside the costmap
+        result = point_in_costmap(point, costmap)
+        self.assertFalse(result)
+
+    def test_point_on_costmap_edge(self):
+        # Create a 3x3 costmap for testing
+        costmap = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
+        point = (0, 2)  # This point is on the costmap edge
+        result = point_in_costmap(point, costmap)
+        self.assertTrue(result)
+
 if __name__ == "__main__":
     unittest.main()
