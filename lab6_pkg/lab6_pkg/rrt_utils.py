@@ -442,17 +442,6 @@ def in_goal_region(new_point: Tuple[int, int],
         bool: True if the new point is close enough to the goal (I.e., it falls
         within goal_radius_c of the goal_point), False if not.
     """
-    # One idea (probaly the most "correct"): Compute compute the euclidean
-    # distance between the new point and the goal point (in # of cells), and
-    # compare that distance to the goal_radius_c. If it's less than or equal to
-    # that distance, than it's good enough.
-
-    # Note, though, that the above requires a floating point operation. What
-    # would be faster is if we just made the goal region square and used the
-    # same logic as above when checking if a point is within the costmap bounds.
-    # I.e., just have to check if the new point is within the square with radius
-    # goal_radius_c around the goal position. Going to opt for this approach to
-    # start for the sake of simplicity.
 
     # Compute the boundary values for the goal square using the goal point and
     # the goal radius.

@@ -73,5 +73,28 @@ class TestPointInCostmap(unittest.TestCase):
         result = point_in_costmap(point, costmap)
         self.assertTrue(result)
 
+class TestInGoalRegion(unittest.TestCase):
+
+    def test_within_goal_region(self):
+        goal_point = (5, 5)
+        goal_radius = 3
+        new_point = (6, 6)
+        result = in_goal_region(new_point, goal_point, goal_radius)
+        self.assertTrue(result)
+
+    def test_outside_goal_region(self):
+        goal_point = (5, 5)
+        goal_radius = 3
+        new_point = (10, 10)
+        result = in_goal_region(new_point, goal_point, goal_radius)
+        self.assertFalse(result)
+
+    def test_on_goal_region_edge(self):
+        goal_point = (5, 5)
+        goal_radius = 3
+        new_point = (5, 8)
+        result = in_goal_region(new_point, goal_point, goal_radius)
+        self.assertTrue(result)
+
 if __name__ == "__main__":
     unittest.main()
