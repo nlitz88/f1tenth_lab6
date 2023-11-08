@@ -253,7 +253,7 @@ def check_collision(nearest_point: Tuple[int, int],
     # Using a version of Bresenham's algorithm that doesn't use floating point
     # derived from this GeeksForGeeks page:
     # https://www.geeksforgeeks.org/bresenhams-line-generation-algorithm/
-
+    
     # NOTE: To account for the difference of these two points fallin in any
     # quadrant: Basically, we will always "walk the line" in the "first
     # quadrant," but based on the difference in x and y between the points, we
@@ -271,6 +271,17 @@ def check_collision(nearest_point: Tuple[int, int],
     x_offset = x2-x1
     y_offset = y2-y1
 
+    # Problem: This algorithm doesn't allow us to draw horizontal lines (or
+    # lines along the y-axis). How do we resolve this?
+    # WELL, the bresenham line algorithm really only works for lines between 0
+    # and 45 degrees. Anything more than that and you need to apply some
+    # creative logic to use it for other angles.
+    # Per a stack overflow answer: the best way to tackle this is to identify:
+    # if the change in y is greater than the change in x (I.e., if the point
+    # you're trying to draw a line to exceeds that 45 degree mark), then instead
+    # of incrementing over x and computing each y, we have to increment over
+    # each y and compute each x.
+
     # Additionally, in order to make sure, then, that we're ALWAYS only drawing
     # in the "first quadrant," I think we just have to make sure our second
     # point is always the at the positive difference away from the starting
@@ -286,41 +297,11 @@ def check_collision(nearest_point: Tuple[int, int],
     y = y1
     x = x1
 
-    # Have to evaluate the first position before any others.
-    if x_offset < 0:
-        x_real = x - 2*(x-x1)
-    else:
-        x_real = x
-    if y_offset < 0:
-        y_real = y - 2*(y-y1)
-    else:
-        y_real = y
-    if costmap[y_real, x_real] >= occupied_threshold:
-        logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
-        collision_found = True
-    # Compute the adjusted slope (adjusted to avoid floating point arithmetic
-    # later) and initialize the (adjusted) slope error.
-    adjusted_slope = 2*(y2-y1)
-    adjusted_slope_error = adjusted_slope - (x2-x1)
+    # Change which version of the algorithm is used based on which direction's
+    # offset is larger.
+    if np.abs(x_offset) >= np.abs(y_offset):
 
-    while not collision_found and x < x2+1:
-        
-        # 1. Update the slope error for computing the next value. I.e., this
-        #    will be the error once we'll use to figure out what to do to get
-        #    the next value.
-        adjusted_slope_error += adjusted_slope
-        
-        # 2. Get the next point in the line (know the next x value in the range,
-        #    use Bresenham's to get the next corresponding y value).
-        x += 1
-        # If the slope error has reached 0, that means it's time to increment y
-        # up to the next value.
-        if adjusted_slope_error >= 0:
-            y += 1
-            adjusted_slope_error = adjusted_slope_error - 2 * (x2-x1)
-        
-        # 3. Interpret the "first quadrant line value" to the actual value based
-        #    on the coordinate sign variables above.
+        # Have to evaluate the first position before any others.
         if x_offset < 0:
             x_real = x - 2*(x-x1)
         else:
@@ -329,14 +310,101 @@ def check_collision(nearest_point: Tuple[int, int],
             y_real = y - 2*(y-y1)
         else:
             y_real = y
-        # 4. Check for collision at the interpretted position.
         if costmap[y_real, x_real] >= occupied_threshold:
             logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
             collision_found = True
+        # Compute the adjusted slope (adjusted to avoid floating point arithmetic
+        # later) and initialize the (adjusted) slope error.
+        adjusted_slope = 2*(y2-y1)
+        adjusted_slope_error = adjusted_slope - (x2-x1)
 
-        # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
-        # line.
-        costmap[y_real,x_real] = 100
+        while not collision_found and x < x2+1:
+            
+            # 1. Update the slope error for computing the next value. I.e., this
+            #    will be the error once we'll use to figure out what to do to get
+            #    the next value.
+            adjusted_slope_error += adjusted_slope
+            
+            # 2. Get the next point in the line (know the next x value in the range,
+            #    use Bresenham's to get the next corresponding y value).
+            x += 1
+            # If the slope error has reached 0, that means it's time to increment y
+            # up to the next value.
+            if adjusted_slope_error >= 0:
+                y += 1
+                adjusted_slope_error = adjusted_slope_error - 2 * (x2-x1)
+            
+            # 3. Interpret the "first quadrant line value" to the actual value based
+            #    on the coordinate sign variables above.
+            if x_offset < 0:
+                x_real = x - 2*(x-x1)
+            else:
+                x_real = x
+            if y_offset < 0:
+                y_real = y - 2*(y-y1)
+            else:
+                y_real = y
+            # 4. Check for collision at the interpretted position.
+            if costmap[y_real, x_real] >= occupied_threshold:
+                logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
+                collision_found = True
+
+            # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
+            # line.
+            costmap[y_real,x_real] = 100
+
+    else:
+        # Have to evaluate the first position before any others.
+        if x_offset < 0:
+            x_real = x - 2*(x-x1)
+        else:
+            x_real = x
+        if y_offset < 0:
+            y_real = y - 2*(y-y1)
+        else:
+            y_real = y
+        if costmap[y_real, x_real] >= occupied_threshold:
+            logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
+            collision_found = True
+        # Compute the adjusted slope (adjusted to avoid floating point arithmetic
+        # later) and initialize the (adjusted) slope error.
+        adjusted_slope = 2*(x2-x1)
+        adjusted_slope_error = adjusted_slope - (y2-y1)
+
+        while not collision_found and y < y2+1:
+            
+            # 1. Update the slope error for computing the next value. I.e., this
+            #    will be the error once we'll use to figure out what to do to get
+            #    the next value.
+            adjusted_slope_error += adjusted_slope
+            
+            # 2. Get the next point in the line (know the next x value in the range,
+            #    use Bresenham's to get the next corresponding y value).
+            y += 1
+            # If the slope error has reached 0, that means it's time to increment y
+            # up to the next value.
+            if adjusted_slope_error >= 0:
+                x += 1
+                adjusted_slope_error = adjusted_slope_error - 2 * (y2-y1)
+            
+            # 3. Interpret the "first quadrant line value" to the actual value based
+            #    on the coordinate sign variables above.
+            if x_offset < 0:
+                x_real = x - 2*(x-x1)
+            else:
+                x_real = x
+            if y_offset < 0:
+                y_real = y - 2*(y-y1)
+            else:
+                y_real = y
+            # 4. Check for collision at the interpretted position.
+            if costmap[y_real, x_real] >= occupied_threshold:
+                logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
+                collision_found = True
+
+            # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
+            # line.
+            costmap[y_real,x_real] = 100
 
     return collision_found
 
