@@ -10,7 +10,7 @@ from tf2_ros.transform_listener import TransformListener
 import tf2_geometry_msgs
 
 from lab6_pkg.rrt_utils import *
-from lab6_pkg.laser_costmap_utils import occupancy_grid_from_twod_numpy, twod_numpy_from_occupancy_grid, project_continuous_point_to_grid
+from lab6_pkg.laser_costmap_utils import occupancy_grid_from_twod_numpy, project_grid_point_to_continuous, twod_numpy_from_occupancy_grid, project_continuous_point_to_grid
 
 # class def for RRT
 class RRT(Node):
@@ -188,13 +188,18 @@ class RRT(Node):
         if self.__path_frame == "local":
             new_path.header.frame_id = costmap.header.frame_id
             new_path.header.stamp = costmap.header.stamp # May have to change this later.
-            for node_position in rrt_path:
-                x, y = node_position
+            for grid_position in rrt_path:
+                # First, project the grid position back into the real continuous
+                # coordinates in the frame the occupancy grid is in.
+                continuous_position = project_grid_point_to_continuous(occupancy_grid=costmap,
+                                                                       grid_position=grid_position)
+                x, y = continuous_position
                 new_pose = PoseStamped()
                 new_pose.header.frame_id = self.__path_frame
                 new_pose.header.stamp = costmap.header.stamp
                 new_pose.pose.position.x = x
                 new_pose.pose.position.y = y
+                new_path.poses.append(new_pose)
 
         # If the path frame IS specified, then we need to try to transform the
         # points in the path returned by RRT to that new frame, and then
