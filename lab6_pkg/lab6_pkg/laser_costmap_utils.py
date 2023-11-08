@@ -53,42 +53,38 @@ def position_from_range(range_m: float, angle_rad: float) -> ContinuousPosition:
     position.y = range_m*np.sin(angle_rad)
     return position
 
-def position_in_grid_frame(position: ContinuousPosition, grid_origin_position: Point) -> ContinuousPosition:
-    """Returns the position provided with respect to the parent frame of the
-    occupancy grid (laser) and returns it expressed in terms of / from the
-    perspective of the occupancy grid's origin.
-
-    Args:
-        position (ContinuousPosition): _description_
-        grid_origin_position (Point): _description_
-
-    Returns:
-        ContinuousPosition: _description_
-    """
-    pass
-
 @dataclass
 class GridPosition:
     x: int = 0
     y: int = 0
 
-# def project_continous_point_to_grid(grid_resolution_m_c: float, 
-#                                     continous_point: ContinuousPosition) -> GridPosition:
-#     """Takes a continous 2D position in a frame and converts it to coordinates
-#     in a 2D grid, where there is no transformation (translation or rotation)
-#     from the source frame to the grid's frame.
+def project_grid_point_to_continuous(occupancy_grid: OccupancyGrid,
+                                     grid_position: Tuple[int, int]) -> Tuple[float, float]:
+    """Takes a discrete x,y position in an occupancy grid and projects it back
+    into the continuous frame that it's origin is located in/w.r.t.
 
-#     Args:
-#         grid_resolution_m_c (float): The number of cells per meter in the grid
-#         you're projecting the continous point into.
-#         continous_point (ContinuousPosition): Continous position (in meters) of a
-#         point in an arbitrary frame.
+    Args:
+        occupancy_grid (OccupancyGrid): The occupancy grid the point is being
+        projected from.
+        grid_position (Tuple[int, int]): The position being projected from the
+        the occupancy grid to the continuous parent frame.
 
-#     Returns:
-#         GridPosition: The position of the continuous point projected into the
-#         grid. The coordinates with respect to a grid whose 
-#     """
-#     pass
+    Returns:
+        Tuple[float, float]: The (continuous) position of the grid position
+        projected into x,y coordinates of the parent frame.
+    """
+    # 1. Take grid position in # cells and multiply by the resolution of the
+    #    grid in meters per cell to get the coordinates in meters first.
+    grid_x, grid_y = grid_position
+    continuous_x = grid_x*occupancy_grid.info.resolution
+    continuous_y = grid_y*occupancy_grid.info.resolution
+    # 2. Offset the points now in the continuous frame by the position of the
+    #    origin of the occupancy grid in that frame. I.e., if a point was at 0,0
+    #    in the occupancy grid, it's really at the position of the origin of the
+    #    occupancy grid. Add the origin of the occupancy grid to the point.
+    offset_x = continuous_x + occupancy_grid.info.origin.position.x
+    offset_y = continuous_y + occupancy_grid.info.origin.position.y
+    return (offset_x, offset_y)
 
 def project_continuous_point_to_grid(occupancy_grid: OccupancyGrid,
                                      continuous_point: Tuple[float, float]) -> Tuple[int, int]:

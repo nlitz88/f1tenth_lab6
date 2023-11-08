@@ -64,5 +64,39 @@ class TestProjectContinuousPointToGrid(unittest.TestCase):
         result = project_continuous_point_to_grid(occupancy_grid, continuous_point)
         self.assertEqual(result, (7, 7))  # (2.5 - 1.0) / 0.2 = 7
 
+class TestProjectGridPointToContinuous(unittest.TestCase):
+
+    def test_project_grid_point_to_continuous(self):
+        # Create a mock OccupancyGrid with relevant data
+        class MockOccupancyGrid:
+            def __init__(self, resolution, origin_x, origin_y):
+                self.info = MockInfo(resolution, MockPoint(origin_x, origin_y))
+
+        class MockInfo:
+            def __init__(self, resolution, origin):
+                self.resolution = resolution
+                self.origin = origin
+
+        class MockPoint:
+            def __init__(self, x, y):
+                self.position = MockPosition(x, y)
+
+        class MockPosition:
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        # Test cases with different grid positions and occupancy grid settings
+        test_cases = [
+            ((MockOccupancyGrid(0.1, 1.0, 2.0), (0, 0)), (1.0, 2.0)),
+            ((MockOccupancyGrid(0.1, 1.0, 2.0), (2, 3)), (1.2, 2.3)),
+            ((MockOccupancyGrid(0.05, 0.5, 0.5), (4, 5)), (0.7, 0.75)),
+        ]
+
+        for (occupancy_grid, grid_position), expected_result in test_cases:
+            with self.subTest(occupancy_grid=occupancy_grid, grid_position=grid_position):
+                result = project_grid_point_to_continuous(occupancy_grid, grid_position)
+                self.assertEqual(result, expected_result)
+
 if __name__ == "__main__":
     unittest.main()
