@@ -90,7 +90,10 @@ class Tree:
     def backtrace(self, goal_node_index: int) -> List[Tuple[int, int]]:
         """Traverses the tree and returns a path from the root node to the
         specified goal node index. Specifically, it returns a list position
-        Tuples, where each comes from the corresponding node.
+        Tuples, where each comes from the corresponding node. Note that this
+        functionality is probably better suited to be implemented externally, as
+        its really doing a graph search / traversal, but for our purposes, this
+        works for now.
 
         Args:
             goal_node_index (int): Goal node's index in the tree.
@@ -130,6 +133,9 @@ class Tree:
                 for child_index in self.__node_adjacency_lists[current_node_index]:
                     node_previous[child_index] = current_node_index
                     visit_queue.append(child_index)
+    
+        if not explored_to_goal:
+            raise Exception("Failed to find goal node in tree--something's not right here!")
         
         # Once  we've found the goal, then we can trace back from the goal to
         # the root using the node_previous array.
