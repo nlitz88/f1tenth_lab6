@@ -54,5 +54,20 @@ class GoalPublisher(Node):
         Args:
             pose_msg (PoseStamped): _description_
         """
+        # 1. Optionally compute the current lookahead distance between some min
+        #    and max using some gain specified as a parameter given the current
+        #    longitudinal velocity of the vehicle (get this from the pose's
+        #    twist component).
+
+        # 2. The vehicle pose is the starting point. Just like pure pursuit,
+        #    first find the closest point. Then from there, scan all the rest of
+        #    the points from that one that are at least one lookahead distance
+        #    away. Don't remember how I solved the issue of being at the end of
+        #    the path, maybe it was fine?
+
+        # REMEMBER: This node's lookahead distnace PROBABLY needs to be 2x as
+        # long as pure-pursuits, as pure pursuit is going to be following RRT's
+        # path. Therefore, RRT should be planning ahead of what the path tracker
+        # is following, right?
         pass
     
