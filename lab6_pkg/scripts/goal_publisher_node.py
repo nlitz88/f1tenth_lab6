@@ -75,7 +75,7 @@ class GoalPublisher(Node):
                                                 path=self.__path,
                                                 lookahead_distance_m=lookahead_distance_m)
         except Exception as exc:
-            self.get_logger.error(f"Failed to get next target pose.\nException: {str(exc)}")
+            self.get_logger().error(f"Failed to get next target pose.\nException: {str(exc)}")
             return
         
         # 3. Publish the selected target pose as the next goal pose.
