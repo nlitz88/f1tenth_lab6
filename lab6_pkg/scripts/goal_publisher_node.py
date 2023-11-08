@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
@@ -75,6 +76,7 @@ class GoalPublisher(Node):
         
         # 3. Publish the selected target pose as the next goal pose.
         self.__goal_publisher.publish(target_pose)
+        self.get_logger().info(f"Published new goal pose at {(target_pose.pose.position.x, target_pose.pose.position.y)}")
 
         # REMEMBER: This node's lookahead distance PROBABLY needs to be 2x as
         # long as pure-pursuits, as pure pursuit is going to be following RRT's
@@ -84,3 +86,13 @@ class GoalPublisher(Node):
         # Also note: This node publishes goal points in the same frame as the
         # path received. I.e., this exclusively operates in the frame that the
         # subscribed path is in.
+
+def main(args=None):
+    rclpy.init()
+    goal_publisher_node = GoalPublisher()
+    rclpy.spin(goal_publisher_node)
+    goal_publisher_node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == "__main__":
+    main()
