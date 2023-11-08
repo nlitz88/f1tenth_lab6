@@ -242,11 +242,10 @@ def point_in_costmap(point: Tuple[int, int], costmap: np.ndarray) -> bool:
     # bounds--return True.
     return True
 
-def check_collision(nearest_point: Tuple[int, int],
-                    new_point: Tuple[int, int], 
-                    costmap: np.ndarray,
-                    logger,
-                    occupied_threshold: Optional[int] = 100) -> bool:
+def collision(nearest_point: Tuple[int, int],
+             new_point: Tuple[int, int], 
+             costmap: np.ndarray,
+             occupied_threshold: Optional[int] = 100) -> bool:
     """Check for a collision along the line connecting the nearest point to the
     new_point. Uses Bresenham's line algorithm to determine each x,y coordinate
     along the line and checks for occupancy at each position along the line.
@@ -493,7 +492,7 @@ def find_path(self, tree, latest_added_node):
 def rrt(costmap: np.ndarray,
         start_point: GridPosition,
         goal_point: GridPosition,
-        goal_radius: int,
+        goal_radius_c: int,
         new_point_distance: int,
         max_iterations: int,
         logger) -> List[GridPosition]:
@@ -501,6 +500,8 @@ def rrt(costmap: np.ndarray,
     # provided costmap
 
     # INITITIALIZATION STEPS
+    # Create a new tree instance and initialize it with the root equal to the
+    # starting point.
     rrt_tree = Tree(root_position=(start_point.x, start_point.y))
 
     # I also think that this function should be the one responsible for
@@ -509,18 +510,23 @@ def rrt(costmap: np.ndarray,
     # here, therefore, I think that should be one of this function's
     # "initialization" steps.
     free_space = free_space_from_costmap(costmap=costmap)
+    
+    # Variables to control iteration and how we backtrace our path.
+    goal_reached = False
+    root_node_index = 0
+    goal_node_index = root_node_index
+
     # Before running any RRT iterations, make sure there is free space to sample
     # from. If not, just set the goal as reached, and set the goal node to the
     # root node.
     if free_space.shape[0] == 0:
         # Provide some sort of warning??
         goal_reached = True
-        goal_node = 0
+        goal_node_index = 0
 
     # RRT LOOP STEPS
     # Loop for a finite number of times or until a path to the goal region has
     # been found.
-    goal_reached = False
     iteration_count = 0
     while iteration_count < max_iterations and not goal_reached:
         
@@ -532,10 +538,38 @@ def rrt(costmap: np.ndarray,
         # 3. Use the steer function to determine the location of a node along
         #    the line from from the nearest tree node to the sampled node, some
         #    distance new_node_distance away from the nearest tree node.
-        new_node_coords = steer(nearest_point=nearest_point_coords,
+        new_point_coords = steer(nearest_point=nearest_point_coords,
                                 sampled_point=sampled_point_coords,
                                 new_point_distance=new_point_distance)
-        # 4. Check to see if the 
+        # 4. Check to see if the new node's coordinates are within the costmap's
+        #    bounds. If it's not within the costmap, then just skip over this
+        #    point
+        if not point_in_costmap(point=new_point_coords, costmap=costmap):
+            continue
+    
+        # 5. If it is within the costmap, also check to see if there are any
+        #    abstacles along the line from the nearest node to this newest node,
+        #    or if the newest node just falls on top of occupied space. If there
+        #    is a collision, just move on and skip over this point.
+        if collision(nearest_point=nearest_point_coords,
+                     new_point=new_point_coords,
+                     costmap=costmap):
+            continue
+
+        # 6. If the point is within the costmap and there aren't any obstacles
+        #    in between it and the nearest node, then we can add it to the tree
+        #    as the child of teh nearest node.
+        new_node_index = rrt_tree.add_node(parent_index=nearest_node_to_sample)
+
+        # 7. Finally, check to see if the point falls within the goal region. If
+        #    so, then the new_node_index is our goal node, the path will be
+        #    backtraced for this new node, and RRT has finished planning a path.
+        goal_point_coords = (goal_point.x, goal_point.y)
+        if in_goal_region(new_point=new_point_coords,
+                          goal_point=goal_point_coords,
+                          goal_radius_c=goal_radius_c):
+            goal_reached = True
+            goal_node_index = new_node_index
 
         # Check for a collision along the line from the nearest point in the
         # tree to the sampled point to determine if we can add a new node in

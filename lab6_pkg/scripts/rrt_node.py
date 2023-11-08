@@ -220,10 +220,10 @@ class RRT(Node):
 
         # NOTE: Test the check collision function.
         start_position = (start_position[0] + 15, start_position[1])
-        check_collision(nearest_point=start_position,
-                        new_point=goal_position, 
-                        costmap=numpy_occupancy_grid,
-                        logger=self.get_logger())
+        # check_collision(nearest_point=start_position,
+        #                 new_point=goal_position, 
+        #                 costmap=numpy_occupancy_grid,
+        #                 logger=self.get_logger())
         
         # 4. Randomly select a cell from the free space discovered in the
         #    occupancy grid.
