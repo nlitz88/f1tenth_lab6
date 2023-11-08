@@ -605,15 +605,10 @@ def rrt(costmap: np.ndarray,
             goal_reached = True
             goal_node_index = new_node_index
 
-    # In either case below, we're going to return a path, which will start as a
-    # list of Tuple x,y positions.
-    path = List[Tuple[int, int]]
-
     # If the goal node HAS BEEN REACHED, then call the backtrace function on the
     # tree to get the path from the root of the tree (the starting position) to
-    # the goal node (the point in the goal region).
-    if goal_reached:
-        pass
+    # the goal node (the point in the goal region). No more work needs to be
+    # done to find a goal_node_index--that has been done successfully above.
 
     # If the goal HAS NOT been reached by the end of the iterations, I think the
     # safest action to take is to just find the node in the tree that is CLOSEST
@@ -621,12 +616,19 @@ def rrt(costmap: np.ndarray,
     # then just publishing a path from the start to that goal node, even if it
     # hasn't truly reached the end. This way, your path tracker still has a path
     # to track, but it's a safe path that it should be able to observe the end
-    # of and hopefully stop in time.
-    else:
-        pass
+    # of and hopefully stop in time. Can actually just reuse the "nearest"
+    # function to do this for us, as it returns the node in the the tree that is
+    # closest to another node.
+    if not goal_reached:
+        goal_node_index = nearest(tree=rrt_tree, sampled_point=goal_point_coords)
 
-    
-    # Then, from either of the above, return the list of Tuple positions.
+    # NOTE: I think in either of the above cases, though, we're coming up with
+    # some node to be our goal node--whether it's a true goal node in proximity
+    # to the goal region, or it's just the best we could do given the current
+    # costmap and the number of iterations we had. Therefore, if that's the
+    # case, should be able to call backtrace right here independent of the above
+    # conditions.
+    path = rrt_tree.backtrace(goal_node_index=goal_node_index)
 
-
-    return []
+    # Return this path of occupancy grid positions.
+    return path
