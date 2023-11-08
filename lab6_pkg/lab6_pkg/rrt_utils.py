@@ -88,6 +88,11 @@ class Tree:
             x,y coordinate position.
         """
         return np.array(self.__node_coordinates)
+    
+    def backtrace(self, start_node_index: int, goal_node_index: int) -> List[int]:
+        # TODO: Implement this function to iterate through the graph and return
+        # the path to the goal node.
+        pass
 
 def free_space_from_costmap(costmap: np.ndarray,
                             occupied_threshold: Optional[int] = 100) -> np.ndarray:
@@ -115,18 +120,11 @@ def sample(free_space: np.ndarray) -> Tuple[int, int]:
         free_space (np.ndarray): A 2D array that contains (intuitively) a list
         of all the coordinates in the costmap that are not occupied.
 
-    Raises:
-        Exception: Raises exception if there are no free spaces for it to sample
-        from.
-
     Returns:
         Tuple[int, int]: Returns the coordinates of the sampled space as a tuple
         (x,y).
     """
-    # 1. Check if there are any free spaces to sample from.
-    if free_space.shape[0] == 0:
-        raise Exception("Free space sampling failed--no free spaces found to sample from in costmap!")
-    # 2. Choose a random number between 0 and the length of the free coordinates
+    # 1. Choose a random number between 0 and the length of the free coordinates
     #    list. Use a uniform distribution, giving equal probability of picking
     #    all points in free space.
     random_index = np.random.randint(low=0, high=free_space.shape[0])
@@ -186,8 +184,7 @@ def steer_and_check(nearest_point: Tuple[int, int],
 
 def steer(nearest_point: Tuple[int, int],
           sampled_point: Tuple[int, int],
-          new_point_distance: float,
-          logger) -> Tuple[int, int]:
+          new_point_distance: int) -> Tuple[int, int]:
     """Returns the grid coordinates of a new point at new_point_distance from
     the nearest_point in the direction of the line from nearest_point to
     sampled_point.
@@ -195,6 +192,8 @@ def steer(nearest_point: Tuple[int, int],
     Args:
         nearest_point (Tuple[int, int]): nearest node on the tree to the sampled point
         sampled_point (Tuple[int, int]): sampled point
+        new_point_distance (int): The distance (in cells) from the nearest node
+        the new node should be placed (along the line from nearest to sampled). 
     Returns:
         Tuple[int, int]: The grid coordinates of the new node.
     """
@@ -203,12 +202,10 @@ def steer(nearest_point: Tuple[int, int],
     # components of that vector first.
     x_comp = sampled_point[0] - nearest_point[0]
     y_comp = sampled_point[1] - nearest_point[1]
-    logger.info(f"Vector x: {x_comp}, y: {y_comp}")
     # Compute the angle using an arctangent function that takes into account
     # different the different quadrants that our point x_comp, y_comp could fall
     # into.
     angle = np.arctan2(y_comp, x_comp)
-    logger.info(f"Computed angle from x-axis: {angle} rad")
     # Compute the x and y component of the new point that is new_point_distance
     # from the starting point at the computed angle.
     x_new = int(nearest_point[0] + new_point_distance*np.cos(angle))
@@ -497,7 +494,7 @@ def rrt(costmap: np.ndarray,
         start_point: GridPosition,
         goal_point: GridPosition,
         goal_radius: int,
-        
+        new_point_distance: int,
         max_iterations: int,
         logger) -> List[GridPosition]:
     # Start point and goal point are both assumed to be within the bounds of the
@@ -512,21 +509,33 @@ def rrt(costmap: np.ndarray,
     # here, therefore, I think that should be one of this function's
     # "initialization" steps.
     free_space = free_space_from_costmap(costmap=costmap)
+    # Before running any RRT iterations, make sure there is free space to sample
+    # from. If not, just set the goal as reached, and set the goal node to the
+    # root node.
+    if free_space.shape[0] == 0:
+        # Provide some sort of warning??
+        goal_reached = True
+        goal_node = 0
 
     # RRT LOOP STEPS
-    # Loop for a finite number of times or until a path has been found to the
-    # goal region.
-    path_found = False
+    # Loop for a finite number of times or until a path to the goal region has
+    # been found.
+    goal_reached = False
     iteration_count = 0
-    while iteration_count < max_iterations and not path_found:
+    while iteration_count < max_iterations and not goal_reached:
         
         # 1. Randomly sample a point in free space.
         sampled_point_coords = sample(free_space=free_space)
         # 2. Find the point in the tree that is closest to the sampled point.
         nearest_node_to_sample = nearest(tree=rrt_tree, sampled_point=sampled_point_coords)
         nearest_point_coords = rrt_tree.get_node_coordinates(node_index=nearest_node_to_sample)
-        # NOTE: DEBUG
-        logger.info(f"Nearest point: {(rrt_tree.get_node_coordinates(node_index=nearest_node_to_sample))}")
+        # 3. Use the steer function to determine the location of a node along
+        #    the line from from the nearest tree node to the sampled node, some
+        #    distance new_node_distance away from the nearest tree node.
+        new_node_coords = steer(nearest_point=nearest_point_coords,
+                                sampled_point=sampled_point_coords,
+                                new_point_distance=new_point_distance)
+        # 4. Check to see if the 
 
         # Check for a collision along the line from the nearest point in the
         # tree to the sampled point to determine if we can add a new node in
@@ -546,6 +555,14 @@ def rrt(costmap: np.ndarray,
 
 
         # DEBUG
-        path_found = True
+        goal_reached = True
+
+    # If the goal HAS NOT been reached by the end of the iterations, I think the
+    # safest action to take is to just find the node in the tree that is CLOSEST
+    # to the goal point, select that closest node as being the goal node, and
+    # then just publishing a path from the start to that goal node, even if it
+    # hasn't truly reached the end. This way, your path tracker still has a path
+    # to track, but it's a safe path that it should be able to observe the end
+    # of and hopefully stop in time.
 
     return []

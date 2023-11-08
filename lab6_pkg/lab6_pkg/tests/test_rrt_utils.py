@@ -28,12 +28,6 @@ class TestFreeSpaceFromCostmap(unittest.TestCase):
         self.assertTrue(np.array_equal(result, expected_result))
 
 class TestSample(unittest.TestCase):
-    def test_empty_free_space(self):
-        free_space = np.array([])
-        with self.assertRaises(Exception) as context:
-            sample(free_space)
-        self.assertTrue("Free space sampling failed--no free spaces found to sample from in costmap!" in str(context.exception))
-
     def test_single_free_space(self):
         free_space = np.array([[1, 1]])
         result = sample(free_space)
