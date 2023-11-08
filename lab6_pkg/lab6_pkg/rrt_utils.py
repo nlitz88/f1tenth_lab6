@@ -311,7 +311,6 @@ def check_collision(nearest_point: Tuple[int, int],
         else:
             y_real = y
         if costmap[y_real, x_real] >= occupied_threshold:
-            logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
             collision_found = True
         # Compute the adjusted slope (adjusted to avoid floating point arithmetic
         # later) and initialize the (adjusted) slope error.
@@ -346,12 +345,7 @@ def check_collision(nearest_point: Tuple[int, int],
                 y_real = y
             # 4. Check for collision at the interpretted position.
             if costmap[y_real, x_real] >= occupied_threshold:
-                logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
                 collision_found = True
-
-            # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
-            # line.
-            costmap[y_real,x_real] = 100
 
     else:
         # Have to evaluate the first position before any others.
@@ -364,7 +358,6 @@ def check_collision(nearest_point: Tuple[int, int],
         else:
             y_real = y
         if costmap[y_real, x_real] >= occupied_threshold:
-            logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
             collision_found = True
         # Compute the adjusted slope (adjusted to avoid floating point arithmetic
         # later) and initialize the (adjusted) slope error.
@@ -399,12 +392,7 @@ def check_collision(nearest_point: Tuple[int, int],
                 y_real = y
             # 4. Check for collision at the interpretted position.
             if costmap[y_real, x_real] >= occupied_threshold:
-                logger.info(f"Found collision at point ({x_real},{y_real}) while walking from starting point {nearest_point} to ending point {new_point}")
                 collision_found = True
-
-            # TODO AS A DEBUGGING STEP, I'm going to fill in each position on the
-            # line.
-            costmap[y_real,x_real] = 100
 
     return collision_found
 
