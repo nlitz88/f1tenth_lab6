@@ -65,9 +65,10 @@ You'll be rewarded extra credit (10%) for implementing RRT*, or another modified
 
 ## V: Deliverables
 - **Deliverable 1**: This package.
-- **Deliverable 2**: ![Video of RRT running in simulation.](https://www.youtube.com/watch?v= -7otOg7wY-w)
-- **Deliverable 3**: ![Vide of the car running RRT in the AIMS hallway]()
-  (Coming soon) 
+- **Deliverable 2**: [Video of RRT running in
+  simulation](https://www.youtube.com/watch?v=-7otOg7wY-w)
+- **Deliverable 3**: [Video of the car running RRT in the AIMS hallway]()
+  (Coming soon)
 
 ## VI: Grading Rubric
 - Compilation: **30** Points
